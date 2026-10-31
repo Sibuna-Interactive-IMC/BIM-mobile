@@ -13,6 +13,11 @@ export function isPlatformAdmin(user?: User | null): boolean {
 	return isTruthy(user?.platform?.is_admin);
 }
 
+/** Admins and staff share the platform-level read views (business analytics). */
+export function isPlatformStaff(user?: User | null): boolean {
+	return isPlatformAdmin(user) || isTruthy(user?.platform?.is_staff);
+}
+
 export function canDeleteSharedRadiusProfile(user?: User | null): boolean {
 	return isPlatformAdmin(user);
 }

@@ -5,6 +5,7 @@ export function useRouter() {
         back: () => { },
         replace: () => { },
         push: () => { },
+        navigate: () => { },
     };
 }
 
@@ -13,7 +14,8 @@ export function useNavigation() {
 }
 
 export function useLocalSearchParams() {
-    return {};
+    const params = (typeof globalThis !== 'undefined' && globalThis.__STORYBOOK_PARAMS__) || {};
+    return params;
 }
 
 export const Link = ({ children, href, ...props }) => {

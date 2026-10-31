@@ -242,6 +242,22 @@ export function formatAmount(value: number | string, decimals = 2): string {
 }
 
 /**
+ * Format an ISO date/time string for display. Returns a dash for empty values.
+ */
+export function formatDateTime(value?: string | null): string {
+	if (!value) return '—';
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return date.toLocaleString(undefined, {
+		day: '2-digit',
+		month: 'short',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+	});
+}
+
+/**
  * Convert a millisecond timestamp to a human-friendly relative time string.
  * Examples: "just now", "5 minutes ago", "2 hours ago", "3 days ago"
  */

@@ -106,6 +106,42 @@ const StubIcon = ({ size = 16, color = 'currentColor', name, ...rest }) => {
             path({ d: 'M11 11l9 9M17 17l2-2M14 14l2-2' }),
         ], rest);
     }
+    if (key.includes('chevron') || key.includes('forward') || key.includes('back')) {
+        return svg(size, color, [path({ d: 'M9 6l6 6-6 6' })], rest);
+    }
+    if (key.includes('map-marker') || key.includes('pin')) {
+        return svg(size, color, [
+            path({ d: 'M12 22s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z' }),
+            circle({ cx: 12, cy: 10, r: 2.5 }),
+        ], rest);
+    }
+    if (key.includes('account-group') || key.includes('account-cog')) {
+        return svg(size, color, [
+            circle({ cx: 9, cy: 8, r: 3 }),
+            path({ d: 'M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6' }),
+            circle({ cx: 17, cy: 9, r: 2.5 }),
+            path({ d: 'M15 20c0-2.5 1-4.2 2.6-5' }),
+        ], rest);
+    }
+    if (key.includes('chart')) {
+        return svg(size, color, [
+            line({ x1: 5, y1: 20, x2: 5, y2: 12 }),
+            line({ x1: 12, y1: 20, x2: 12, y2: 6 }),
+            line({ x1: 19, y1: 20, x2: 19, y2: 10 }),
+        ], rest);
+    }
+    if (key.includes('handshake')) {
+        return svg(size, color, [
+            path({ d: 'M3 12l4-4 5 5 5-5 4 4' }),
+            path({ d: 'M7 16l5 4 5-4' }),
+        ], rest);
+    }
+    if (key.includes('credit-card') || key.includes('ticket')) {
+        return svg(size, color, [
+            rect({ x: 2, y: 5, width: 20, height: 14, rx: 2 }),
+            line({ x1: 2, y1: 10, x2: 22, y2: 10 }),
+        ], rest);
+    }
     // Calendar glyph (default)
     return svg(size, color, [
         rect({ x: 3, y: 4, width: 18, height: 17, rx: 2, ry: 2 }),

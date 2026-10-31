@@ -21,9 +21,20 @@ type Props = {
 	activeKey: string;
 	onChange: (key: string) => void;
 	style?: ViewStyle;
+	/**
+	 * Filter pills (e.g. the voucher router tabs) have no selection until the
+	 * user picks one. Every other tab strip falls back to its first tab.
+	 */
+	allowNoneSelected?: boolean;
 };
 
-export function SegmentedTabs({ tabs, activeKey, onChange, style }: Props) {
+export function SegmentedTabs({
+	tabs,
+	activeKey,
+	onChange,
+	style,
+	allowNoneSelected = false,
+}: Props) {
 	const bg = useThemeColor({}, 'listItemBackground');
 	const activeBg = useThemeColor({}, 'bim');
 	const activeText = useThemeColor({}, 'authButtonText');
@@ -33,6 +44,15 @@ export function SegmentedTabs({ tabs, activeKey, onChange, style }: Props) {
 	const onlineBg = useThemeColor({}, 'lime');
 	const onlineText = useThemeColor({}, 'authButtonText');
 
+	// A tab strip always reads as a choice, so something is always selected: an
+	// unknown/empty activeKey falls back to the first tab.
+	const hasMatch = tabs.some((tab) => tab.key === activeKey);
+	const selectedKey = hasMatch
+		? activeKey
+		: allowNoneSelected
+			? ''
+			: (tabs[0]?.key ?? '');
+
 	return (
 		<ScrollView
 			horizontal
@@ -41,12 +61,13 @@ export function SegmentedTabs({ tabs, activeKey, onChange, style }: Props) {
 			accessibilityRole='tablist'
 		>
 			{tabs.map((tab) => {
-				const selected = tab.key === activeKey;
+				const selected = tab.key === selectedKey;
 				return (
 					<TouchableOpacity
 						key={tab.key}
 						accessibilityRole='tab'
 						accessibilityState={{ selected }}
+						aria-selected={selected}
 						accessibilityLabel={tab.label}
 						onPress={() => onChange(tab.key)}
 						style={[

@@ -749,6 +749,480 @@ export type GetGeneratedVouchersResponse = ApiEnvelope<{
 	users?: GeneratedVoucher[];
 }>;
 
+/** Premises info attached to a site (`Site.site_detail`). */
+export interface SitePremises {
+	landlord?: string | null;
+	notes?: string | null;
+}
+
+/** One site in `GET /sites`. */
+export interface Site {
+	id: string;
+	name: string;
+	location?: string | null;
+	type?: string | null;
+	site_detail?: SitePremises | null;
+	access_points_count?: number;
+	total_expenses?: number;
+}
+
+/** `GET /sites` */
+export type GetSitesResponse = ApiEnvelope<{ sites?: Site[] }>;
+
+/** An access point mounted on a site. */
+export interface SiteAccessPoint {
+	id: number;
+	router_id: string;
+	name: string;
+	label?: string | null;
+	model?: string | null;
+	mac_address?: string | null;
+	physical_location?: string | null;
+	installed_on?: string | null;
+	notes?: string | null;
+	expenses_count?: number;
+	expenses_total?: number;
+}
+
+/** How an expense was settled (cash disbursement or a voucher). */
+export interface SiteExpenseCompensation {
+	type?: 'cash' | 'voucher' | null;
+	disbursement_record_id?: string | null;
+	disbursement_label?: string | null;
+	voucher_user_id?: number | null;
+	voucher_username?: string | null;
+}
+
+/** An expense attached to a site or one of its access points. */
+export interface SiteExpense {
+	id: number;
+	source: 'router' | 'access_point';
+	access_point_id?: number | null;
+	access_point_label?: string | null;
+	category?: string;
+	category_label?: string;
+	description?: string | null;
+	amount?: number;
+	currency?: string;
+	incurred_on?: string | null;
+	notes?: string | null;
+	compensation?: SiteExpenseCompensation | null;
+}
+
+/** `GET /sites/{router}` */
+export type GetSiteResponse = ApiEnvelope<{
+	site?: Site;
+	access_points?: SiteAccessPoint[];
+	expenses?: SiteExpense[];
+	totals?: { total?: number; this_month?: number; visible?: number };
+	filters?: { month?: string; available_months?: string[] };
+}>;
+
+/** The member seen most recently in an account. */
+export interface AnalyticsAccountLastActive {
+	user_id?: number;
+	user_name?: string;
+	role?: string | null;
+	at?: string | null;
+}
+
+/** One account in `GET /analytics/accounts` (admin only). */
+export interface AnalyticsAccount {
+	id: number;
+	name: string;
+	type?: string;
+	type_label?: string;
+	is_admin_account?: boolean;
+	members_count?: number;
+	/** Account roles on the pivot, as role => count. */
+	access_levels?: Record<string, number>;
+	access_levels_summary?: string;
+	last_active?: AnalyticsAccountLastActive | null;
+	created_at?: string | null;
+}
+
+/** `GET /analytics/accounts` */
+export type GetAnalyticsAccountsResponse = ApiEnvelope<{
+	accounts?: AnalyticsAccount[];
+}>;
+
+/** A member of an account, with the seat they hold in it. */
+export interface AnalyticsMember {
+	id: number;
+	name: string;
+	email?: string | null;
+	account_role?: string | null;
+	account_role_label?: string;
+	is_cosignatory?: boolean;
+	/** Voyager role: admin or user. */
+	platform_role?: string | null;
+	last_activity_at?: string | null;
+}
+
+/** A router owned through the account. */
+export interface AnalyticsRouter {
+	id: string;
+	name: string;
+	type?: string;
+	ip_address?: string;
+	hotspot_dns?: string | null;
+	portal_url?: string | null;
+	owner_id?: number;
+	owner_name?: string | null;
+	router_heartbeat_at?: string | null;
+	heartbeat_state?: 'fresh' | 'stale' | 'never';
+	last_contact_at?: string | null;
+	state?: 'online' | 'offline';
+}
+
+/** The roll-up numbers on the account detail page. */
+export interface AnalyticsAccountStats {
+	vouchers?: {
+		total?: number;
+		today?: number;
+		week?: number;
+		month?: number;
+		last_at?: string | null;
+		manual_batches?: {
+			batches?: number;
+			vouchers?: number;
+			last_at?: string | null;
+		};
+	};
+	withdrawals?: { count?: number; pending?: number; total?: number };
+	routers?: { total?: number; reporting?: number };
+}
+
+/** `GET /analytics/accounts/{account}` */
+export type GetAnalyticsAccountResponse = ApiEnvelope<{
+	account?: AnalyticsAccount;
+	members?: AnalyticsMember[];
+	routers?: AnalyticsRouter[];
+	stats?: AnalyticsAccountStats;
+	pending_invitations?: Record<string, unknown>[];
+}>;
+
+/** One entry of the account activity log. */
+export interface AnalyticsActivityEntry {
+	id: number;
+	event?: string;
+	label?: string;
+	summary?: string | null;
+	actor?: { id?: number; name?: string } | null;
+	subject_type?: string | null;
+	subject_id?: string | null;
+	metadata?: Record<string, unknown> | null;
+	created_at?: string | null;
+}
+
+/** `GET /analytics/accounts/{account}/activity` */
+export type GetAnalyticsActivityResponse = ApiEnvelope<{
+	activity?: AnalyticsActivityEntry[];
+}>;
+
+/** An approval attached to an owner withdrawal. */
+export interface AnalyticsWithdrawalApproval {
+	id: number;
+	status?: string;
+	comment?: string | null;
+	approver?: { id?: number; name?: string } | null;
+	created_at?: string | null;
+}
+
+/** An owner withdrawal on the account's routers. */
+export interface AnalyticsWithdrawal {
+	id: string;
+	router?: { id?: string; name?: string } | null;
+	amount?: number;
+	currency?: string;
+	status?: string;
+	reason?: string;
+	initiated_by?: { id?: number; name?: string } | null;
+	approvals?: AnalyticsWithdrawalApproval[];
+	created_at?: string | null;
+}
+
+/** `GET /analytics/accounts/{account}/withdrawals` */
+export type GetAnalyticsWithdrawalsResponse = ApiEnvelope<{
+	withdrawals?: AnalyticsWithdrawal[];
+}>;
+
+/** One manual voucher generation batch. */
+export interface AnalyticsVoucherBatch {
+	batch?: string | null;
+	router_id?: string | null;
+	router_name?: string | null;
+	vouchers?: number;
+	first_at?: string | null;
+	last_at?: string | null;
+}
+
+/** `GET /analytics/accounts/{account}/vouchers` */
+export type GetAnalyticsVouchersResponse = ApiEnvelope<{
+	stats?: AnalyticsAccountStats['vouchers'];
+	vouchers?: AnalyticsVoucherBatch[];
+}>;
+
+/** One profit payout initiated by a member of the account. */
+export interface AnalyticsPayout {
+	id: string;
+	amount?: number;
+	currency?: string;
+	provider?: string | null;
+	recipient_msisdn?: string | null;
+	reference?: string | null;
+	status?: string;
+	initiated_by?: { id?: number; name?: string } | null;
+	created_at?: string | null;
+}
+
+/** `GET /analytics/accounts/{account}/payouts` */
+export type GetAnalyticsPayoutsResponse = ApiEnvelope<{
+	payouts?: AnalyticsPayout[];
+}>;
+
+/** An account membership on a managed login (the seat, not a platform role). */
+export interface ManagedUserAccount {
+	id: number;
+	name: string;
+	type?: string;
+	pivot?: { role?: string | null; is_cosignatory?: boolean | number } | null;
+}
+
+/** A platform role assigned to a managed login. */
+export interface ManagedUserRole {
+	id: number;
+	name?: string;
+	display_name?: string;
+}
+
+/** A login as User Management sees it (`GET /admin/users`). */
+export interface ManagedUser {
+	id: number;
+	name: string;
+	email?: string | null;
+	phone?: string | null;
+	role_id?: number | null;
+	role?: ManagedUserRole | null;
+	accounts?: ManagedUserAccount[];
+	phone_verified_at?: string | null;
+	last_activity_at?: string | null;
+	created_at?: string | null;
+}
+
+/** `GET /admin/users` */
+export type GetAdminUsersResponse = ApiEnvelope<{ users?: ManagedUser[] }>;
+
+/** An account this admin may seat a login in. */
+export interface AdminUserAccountOption {
+	id: number;
+	name: string;
+	type?: string;
+	admin_members_count?: number;
+}
+
+/** The options behind the create/edit login form (`GET /admin/users/create`). */
+export interface AdminUserForm {
+	user?: ManagedUser | null;
+	/** Platform role id => display name, limited to those this admin may assign. */
+	roles?: Record<string, string>;
+	accounts?: AdminUserAccountOption[];
+	/** Seats inside an account (owner, finance, auditor). */
+	accountRoles?: ('owner' | 'finance' | 'auditor')[];
+	/** Sentinel for "create a new account": `__new__`. */
+	newAccountValue?: string;
+	/** Roles whose seat is forced to Auditor. */
+	blogEditorRoleIds?: number[];
+	holdsDefaultRole?: boolean;
+	accountId?: number | null;
+}
+
+/** `GET /admin/users/create` and `GET /admin/users/{user}/edit` */
+export type GetAdminUserFormResponse = ApiEnvelope<{ form?: AdminUserForm }>;
+
+/** Tile numbers for the Accounts hub (`GET /accounts/summary`). */
+export interface AccountsSummary {
+	customer_payments_today?: number;
+	customer_payments_amount_today?: number;
+	owner_withdrawals_today?: number;
+	owner_withdrawals_amount_today?: number;
+	routers_count?: number;
+	my_pending_approvals?: number;
+	disbursement_count?: number;
+	/** Null when the caller cannot open the admin pages behind the tile. */
+	accounts_count?: number | null;
+	users_count?: number | null;
+	global_credits_today?: number | null;
+	generated_at?: string;
+}
+
+/** `GET /accounts/summary` */
+export type GetAccountsSummaryResponse = ApiEnvelope<AccountsSummary>;
+
+/** An owner-withdrawal approval awaiting (or already actioned by) this login. */
+export interface WithdrawalApproval {
+	id: number;
+	transaction_id?: string;
+	approver_id?: number;
+	status?: 'pending' | 'approved' | 'rejected';
+	comment?: string | null;
+	transaction?: ApiTransaction | null;
+	created_at?: string | null;
+}
+
+/** `GET /withdrawals/approvals` */
+export type GetWithdrawalApprovalsResponse = ApiEnvelope<{
+	approvals?: WithdrawalApproval[];
+	initiated?: ApiTransaction[];
+}>;
+
+/** A document attached to a disbursement record. */
+export interface DisbursementDocument {
+	id?: number | string;
+	type?: string;
+	type_label?: string;
+	name?: string;
+	url?: string | null;
+	created_at?: string | null;
+}
+
+/** One disbursement record (`GET /disbursement-records`). */
+export interface DisbursementRecord {
+	id: string;
+	narration?: string | null;
+	created_at?: string | null;
+	transaction?: ApiTransaction | null;
+	documents?: DisbursementDocument[];
+}
+
+/** `GET /disbursement-records` */
+export type GetDisbursementRecordsResponse = ApiEnvelope<{
+	records?: DisbursementRecord[];
+	filters?: Record<string, unknown>;
+	router_names?: string[];
+	document_types?: Record<string, string> | string[];
+}>;
+
+/** One money bucket of the business analytics summary. */
+export interface BusinessStatPeriod {
+	total?: number;
+	count?: number;
+}
+
+/** The platform business analytics summary (`GET /analytics/business/summary`). */
+export interface BusinessAnalyticsSummary {
+	credit_stats?: Record<string, BusinessStatPeriod>;
+	withdrawal_stats?: Record<string, BusinessStatPeriod>;
+	charge_stats?: Record<string, BusinessStatPeriod>;
+	chart_data?: {
+		dates?: string[];
+		credits?: number[];
+		withdrawals?: number[];
+		charges?: number[];
+		generated_at?: string;
+	};
+	top_routers?: {
+		id: string;
+		name: string;
+		balance?: number;
+		owner?: string;
+		owner_email?: string;
+	}[];
+	voucher_stats?: Record<string, number | string | null>;
+	generated_at?: string;
+}
+
+/** `GET /analytics/business/summary` */
+export type GetBusinessAnalyticsResponse = ApiEnvelope<BusinessAnalyticsSummary>;
+
+/** An owner filter option on the business lists. */
+export interface BusinessOwnerOption {
+	id: number;
+	name: string;
+	email?: string;
+}
+
+/** `GET /analytics/business/{credits|charges|withdrawals}` */
+export interface BusinessAnalyticsList {
+	transactions?: ApiTransaction[];
+	/** Sum of the amounts in the selected period. */
+	total?: number;
+	/** Human label, e.g. `Customer Initiated Credits`. */
+	type?: string;
+	kind?: string;
+	period?: string;
+	owner?: number | null;
+	owners?: BusinessOwnerOption[];
+}
+
+/** `GET /analytics/business/{kind}` */
+export type GetBusinessListResponse = ApiEnvelope<BusinessAnalyticsList>;
+
+/** One row of the router leaderboard. */
+export interface BusinessRouterRow {
+	id: string;
+	name: string;
+	ip_address?: string;
+	balance?: number;
+	owner_name?: string | null;
+	owner_email?: string | null;
+	total_volume?: number;
+	total_transactions?: number;
+}
+
+/** `GET /analytics/business/routers` */
+export type GetBusinessRoutersResponse = ApiEnvelope<{
+	routers?: BusinessRouterRow[];
+}>;
+
+/** Provider balances minus what the owners are owed (`GET /analytics/profit`). */
+export interface ProfitSnapshot {
+	yo_balance?: number | null;
+	yo_wallets?: {
+		mtn?: number | null;
+		airtel?: number | null;
+		total?: number | null;
+	};
+	relworx_balance?: number | null;
+	owner_owed?: number;
+	profit?: number;
+	buffer_per_provider?: number;
+	yo_available?: number | null;
+	relworx_available?: number | null;
+	generated_at?: string;
+}
+
+/** A platform-profit payout. */
+export interface ProfitWithdrawal {
+	id: string;
+	amount?: number;
+	currency?: string;
+	provider?: 'yo' | 'relworx' | string;
+	recipient_msisdn?: string;
+	reference?: string | null;
+	status?: 'pending_approval' | 'approved' | 'disbursed' | 'rejected' | 'failed';
+	initiated_by?: { id?: number; name?: string } | null;
+	approvals?: Record<string, unknown>[];
+	created_at?: string | null;
+}
+
+/** A profit withdrawal decision awaiting this admin. */
+export interface ProfitWithdrawalApproval {
+	id: number;
+	status?: 'pending' | 'approved' | 'rejected';
+	comment?: string | null;
+	withdrawal?: ProfitWithdrawal | null;
+	created_at?: string | null;
+}
+
+/** `GET /analytics/profit` */
+export type GetProfitResponse = ApiEnvelope<{
+	snapshot?: ProfitSnapshot;
+	pending_approvals?: ProfitWithdrawalApproval[];
+	my_initiated?: ProfitWithdrawal[];
+	history?: ProfitWithdrawal[];
+}>;
+
 /** `GET /routers/{router}/hosts` */
 export type GetRouterHostsResponse = ApiEnvelope<{
 	router?: ApiRouter;
@@ -922,6 +1396,12 @@ export interface ApiTransaction {
 	transaction_date?: string;
 	/** Payment gateway that processed the transaction (`YO`, `Relworx`, …). */
 	gateway?: string | null;
+	/** The router this happened on, when the endpoint eager-loads it. */
+	router?: { id?: string; name?: string; ip_address?: string } | null;
+	/** The router owner, when the endpoint eager-loads it. */
+	user?: { id?: number; name?: string; email?: string } | null;
+	metadata?: Record<string, unknown> | null;
+	phone?: string | null;
 }
 
 /** Paginated transaction collection (Laravel paginator shape). */

@@ -1,4 +1,5 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import useAccountsBack from '@/hooks/useAccountsBack';
 import { RecordCard, RecordList } from '@/components/RecordList';
 import TileContainer from '@/components/TileContainer';
 import { ThemedView } from '@/components/ThemedView';
@@ -32,6 +33,7 @@ export default function WithdrawScreen() {
 	}, [fetchRouters, user]);
 
 	useTrackHistory('/(authenticated)/withdraw');
+	useAccountsBack();
 
 	useEffect(() => {
 		if (user && routers?.length === 0) {

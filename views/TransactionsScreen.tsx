@@ -6,6 +6,7 @@ import { ThemedDropdown } from '@/components/ThemedDropdown';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import TileContainer from '@/components/TileContainer';
+import useAccountsBack from '@/hooks/useAccountsBack';
 import { apiBaseUrl } from '@/constants/API';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
@@ -21,6 +22,7 @@ import { Linking, View } from 'react-native';
 
 export default function TransactionsScreen() {
 	useTrackHistory('/(authenticated)/transactions');
+	useAccountsBack();
 	// Theme helpers
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');

@@ -903,6 +903,7 @@ export default function VouchersScreen() {
 						tabs={routerTabs}
 						activeKey={routerFilter}
 						onChange={handleRouterChange}
+						allowNoneSelected
 					/>
 				</TileContainer>
 
