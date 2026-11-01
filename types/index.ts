@@ -1144,6 +1144,46 @@ export type GetWithdrawalApprovalsResponse = ApiEnvelope<{
 	initiated?: ApiTransaction[];
 }>;
 
+/** One member of the active account (`GET /invitations`). */
+export interface AccountMember {
+	id: number;
+	name: string;
+	email?: string | null;
+	phone?: string | null;
+	/** Account seat on the membership pivot. */
+	pivot?: {
+		account_id?: number;
+		user_id?: number;
+		role?: string | null;
+		is_cosignatory?: boolean | number | null;
+		created_at?: string | null;
+	};
+}
+
+/** A pending invitation to the active account (`GET /invitations`). */
+export interface AccountInvitation {
+	id: number;
+	email: string;
+	role?: string | null;
+	is_cosignatory?: boolean | number | null;
+	created_at?: string | null;
+}
+
+/** `GET /invitations` — active account, its members and pending invitations. */
+export type GetAccessResponse = ApiEnvelope<{
+	account?: Account;
+	members?: AccountMember[];
+	invitations?: AccountInvitation[];
+}>;
+
+/** `POST /invitations` — seat values match the server's `owner|Finance|Auditor`. */
+export interface InviteUserPayload {
+	email: string;
+	role: 'owner' | 'Finance' | 'Auditor';
+	/** Only Finance seats can co-sign withdrawals. */
+	is_cosignatory?: boolean;
+}
+
 /** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
 export interface WithdrawalRequestPayload {
 	amount: number;
