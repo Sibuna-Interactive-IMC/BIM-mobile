@@ -2,6 +2,7 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedInput } from '@/components/ThemedInput';
 import { ThemedText } from '@/components/ThemedText';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
@@ -96,9 +97,27 @@ export default function ProfileScreen() {
 			containerStyle={{ flex: 1 }}
 			contentStyle={{ paddingHorizontal: 10 }}
 		>
-			{/* Tile 1: Profile Details */}
+			<TileContainer
+				id='profile-header-tile'
+				flat
+				backgroundColor={bg}
+				style={{ width: '100%', marginBottom: 12 }}
+			>
+				<ScreenHeader
+					id='profile-header'
+					title={translations[language].categories.auth['profile.details.title']}
+				/>
+			</TileContainer>
+
+						<TileContainer
+				id='profile-content-tile'
+				flat
+				backgroundColor={bg}
+				style={{ width: '100%', gap: 12 }}
+			>
 			<TileContainer
 				id={'profile-details'}
+				borderless
 				backgroundColor={bg}
 				style={{ marginBottom: 16, alignItems: 'stretch' }}
 			>
@@ -172,6 +191,7 @@ export default function ProfileScreen() {
 						title={
 							translations[language].categories.auth['profile.details.button']
 						}
+						icon='check'
 						onPress={handleSaveProfile}
 						lightColor={profileChanged ? bim : secondaryButton}
 						darkColor={profileChanged ? bim : secondaryButton}
@@ -185,6 +205,7 @@ export default function ProfileScreen() {
 			{/* Tile 2: Change Password */}
 			<TileContainer
 				id={'change-password'}
+				borderless
 				backgroundColor={bg}
 				style={{ marginBottom: 16, alignItems: 'stretch' }}
 			>
@@ -267,6 +288,7 @@ export default function ProfileScreen() {
 						title={
 							translations[language].categories.auth['profile.password.button']
 						}
+						icon='check'
 						onPress={handleUpdatePassword}
 						lightColor={passwordChangeValid ? bim : secondaryButton}
 						darkColor={passwordChangeValid ? bim : secondaryButton}
@@ -280,6 +302,7 @@ export default function ProfileScreen() {
 			{/* Tile 3: Delete Account */}
 			<TileContainer
 				id={'delete-account'}
+				borderless
 				backgroundColor={bg}
 				style={{ marginBottom: 16, alignItems: 'stretch' }}
 			>
@@ -319,6 +342,7 @@ export default function ProfileScreen() {
 						title={
 							translations[language].categories.auth['profile.delete.button']
 						}
+						icon='delete.outline'
 						onPress={handleDeleteAccount}
 						lightColor={dangerButton}
 						darkColor={dangerButton}
@@ -326,6 +350,7 @@ export default function ProfileScreen() {
 						darkTextColor={white}
 					/>
 				</View>
+			</TileContainer>
 			</TileContainer>
 		</ParallaxScrollView>
 	);

@@ -1,15 +1,12 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
-import { useGeneral } from '@/context/GeneralContext';
-import { useTransaction } from '@/context/TransactionContext';
+import { useGeneral } from '@/context/GeneralContext';import { useTransaction } from '@/context/TransactionContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import { getApiData } from '@/helpers/apiResponse';
@@ -25,7 +22,6 @@ export default function RoutersScreen() {
 	const colorScheme = useColorScheme() ?? 'light';
 
 	const bg = useThemeColor({}, 'background');
-	const bimColor = useThemeColor({}, 'bim');
 	const actionButton = useThemeColor({}, 'actionButton');
 	const authButtonText = useThemeColor({}, 'authButtonText');
 	const router = useRouter();
@@ -153,44 +149,30 @@ export default function RoutersScreen() {
 				onRefresh={handleRefresh}
 				refreshing={refreshing}
 			>
-				<ThemedView lightColor={bg} darkColor={bg}>
-					<ThemedText
-						lightColor={bimColor}
-						darkColor={bimColor}
-						style={{
-							width: '100%',
-							textTransform: 'capitalize',
-							fontSize: fontSize['heading.one'],
-							fontWeight: fontWeight['heading.one'],
-						}}
-					>
-						{translations[language].categories.routers.title}
-					</ThemedText>
-				</ThemedView>
-				<ThemedView
-					style={{
-						width: '100%',
-						paddingVertical: 16,
-						alignItems: 'flex-end',
-					}}
-					lightColor={bg}
-					darkColor={bg}
+				<TileContainer
+					id='routers-header-tile'
+					flat
+					backgroundColor={bg}
+					style={{ width: '100%' }}
 				>
-					<ThemedButton
-						title={translations[
-							language
-						].categories.buttons.addRouter?.toUpperCase()}
-						onPress={handleAddRouter}
-						style={{
-							borderRadius: 8,
-							width: 150,
-						}}
-						darkColor={actionButton}
-						lightColor={actionButton}
-						darkTextColor={authButtonText}
-						lightTextColor={authButtonText}
+					<ScreenHeader
+						id='routers-header'
+						title={translations[language].categories.routers.title}
+						action={
+							<ThemedButton
+								title={translations[language].categories.buttons.addRouter}
+								icon='plus'
+								numberOfLines={1}
+								onPress={handleAddRouter}
+								style={{ borderRadius: 8 }}
+								darkColor={actionButton}
+								lightColor={actionButton}
+								darkTextColor={authButtonText}
+								lightTextColor={authButtonText}
+							/>
+						}
 					/>
-				</ThemedView>
+				</TileContainer>
 				<TileContainer
 					id='routers-list-tile'
 					flat

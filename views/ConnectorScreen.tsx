@@ -1,10 +1,8 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useSecurity } from '@/context/SecurityContext';
@@ -18,7 +16,6 @@ import {
 	StyleSheet,
 	useAnimatedValue,
 } from 'react-native';
-import { SFSymbols6_0 } from 'sf-symbols-typescript';
 
 export default function ConnectorScreen() {
 	useTrackHistory('/(authenticated)/connector');
@@ -27,7 +24,6 @@ export default function ConnectorScreen() {
 	const bg = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
 	const white = useThemeColor({}, 'white');
 	const bim = useThemeColor({}, 'bim');
 	const {
@@ -113,38 +109,28 @@ export default function ConnectorScreen() {
 					e.stopPropagation(); // Prevent touch events from propagating to the drawer
 				}}
 			>
-				<ThemedView
-					style={{ flexDirection: 'column', gap: 5, marginBottom: 10 }}
-					lightColor={bg}
-					darkColor={bg}
+								<TileContainer
+					id='connector-header-tile'
+					flat
+					backgroundColor={bg}
+					style={{ width: '100%', marginBottom: 12 }}
 				>
-					<ThemedText
-						lightColor={textColor}
-						darkColor={textColor}
-						style={{
-							fontSize: fontSize['heading.two'],
-							fontWeight: fontWeight['heading.three'],
-							marginBottom: 8,
-						}}
-					>
-						{translations[language].categories.connector.title}
-					</ThemedText>
-				</ThemedView>
-				<ThemedView style={{
-					flexDirection: 'row',
-					justifyContent: 'flex-end',
-					marginBottom: 10,
-				}}>
-					<ThemedButton
-						title={translations[language].categories.connector.newKeyButton.toUpperCase()}
-						onPress={() => toggleGenerateKeyModal()}
-						lightColor={bim}
-						darkColor={bim}
-						darkTextColor={white}
-						lightTextColor={white}
-						icon={'plus' as SFSymbols6_0}
+					<ScreenHeader
+						id='connector-header'
+						title={translations[language].categories.connector.title}
+						action={
+							<ThemedButton
+								title={translations[language].categories.connector.newKeyButton}
+								icon='plus'
+								onPress={() => toggleGenerateKeyModal()}
+								lightColor={bim}
+								darkColor={bim}
+								darkTextColor={white}
+								lightTextColor={white}
+							/>
+						}
 					/>
-				</ThemedView>
+				</TileContainer>
 				<TileContainer
 					id='connector-list-tile'
 					flat

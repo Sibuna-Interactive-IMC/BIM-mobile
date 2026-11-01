@@ -1,7 +1,7 @@
 import Loader from '@/components/Loader';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedView } from '@/components/ThemedView';
 import translations from '@/constants/Trans';
@@ -166,21 +166,33 @@ export default function PackageRouterHotspotsScreen() {
 			darkColor={backgroundDark}
 			style={styles.container}
 		>
-			<TileContainer
+						<TileContainer
+				id='package-router-hotspots-header-tile'
+				flat
+				backgroundColor={background}
+				style={{ width: '100%', marginBottom: 10 }}
+			>
+				<ScreenHeader
+					id='package-router-hotspots-header'
+					title={translations[language].categories.hotspots.title}
+					description={currentRouter?.name}
+				/>
+			</TileContainer>
+
+<TileContainer
 				id='hotspot-list-tile'
 				flat
 				backgroundColor={background}
 				style={{ flexDirection: 'column' }}
 			>
 				<RecordList
-					id={packageRouterHotspotsListId.current}
-					title={translations[language].categories.hotspots.title}
-					description={currentRouter?.name}
+					id={packageRouterHotspotsListId.current}
 					isEmpty={hotspots.length === 0}
 					emptyMessage={translations[language].categories.hotspots.noHotspots}
 					headerAction={
 						<ThemedButton
 							title={translations[language].categories.buttons.retry}
+							icon='refresh'
 							onPress={() => void handleRefresh()}
 							lightColor='transparent'
 							darkColor='transparent'

@@ -26,6 +26,13 @@ rows never scroll horizontally on a phone.
     `eye.outline`, `edit` uses `edit.outline`, `delete` uses `delete.outline`,
     create uses `plus`, and `view` keeps the brand `bim` colour through
     `tone: 'primary'`. The full table lives in [AGENTS.md](./AGENTS.md#recordcard-actions--always-icon--label).
+- **Screen header**: every screen starts with a `ScreenHeader`
+  (`components/ScreenHeader.tsx`) in its **own** `TileContainer`, then its content
+  in separate tile(s) below — never as the first rows of the content tile. The
+  component renders the title, an optional `description`, a `loading` spinner and
+  an optional `action` on the right; pass extra header content (tabs, a second
+  button row) as `children`. `RecordList` inside a screen should not repeat the
+  page title — its `title`/`description` are for sub-lists within a screen.
 - Every list sits on one elevated container: wrap `RecordList` in a
   `TileContainer`, unless the list already lives inside one (e.g. the dashboard
   transactions and the router-details tab panels).

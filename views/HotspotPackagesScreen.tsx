@@ -1,9 +1,8 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
 import { RecordCard, RecordList } from '@/components/RecordList';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedView } from '@/components/ThemedView';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useTransaction } from '@/context/TransactionContext';
@@ -187,29 +186,30 @@ export default function HotspotPackagesScreen() {
 				contentStyle={{ paddingHorizontal: 10 }}
 				containerStyle={{ flex: 1 }}
 			>
-				<ThemedView
-					style={{ flexDirection: 'column', gap: 10, marginBottom: 10 }}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
+				<TileContainer
+					id='hotspot-packages-header-tile'
+					flat
+					backgroundColor={background}
+					style={{ width: '100%', marginBottom: 10 }}
 				>
-					<ThemedView
-						style={{ width: '100%', alignItems: 'flex-end' }}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
-					>
-						<ThemedButton
-							title={t.buttons.createNewPackage.toUpperCase()}
-							onPress={handleCreateNew}
-							numberOfLines={1}
-							style={{ borderRadius: 8, width: 230 }}
-							darkColor={actionButtonDark}
-							lightColor={actionButtonLight}
-							darkTextColor={authButtonTextDark}
-							lightTextColor={authButtonTextLight}
-						/>
-					</ThemedView>
-				</ThemedView>
-
+					<ScreenHeader
+						id='hotspot-packages-header'
+						title={t.packages.packagesOnHotspot.replace('{hotspotName}', hotspotName || '')}
+						action={
+							<ThemedButton
+								title={t.buttons.createNewPackage}
+								icon='plus'
+								onPress={handleCreateNew}
+								numberOfLines={1}
+								style={{ borderRadius: 8 }}
+								darkColor={actionButtonDark}
+								lightColor={actionButtonLight}
+								darkTextColor={authButtonTextDark}
+								lightTextColor={authButtonTextLight}
+							/>
+						}
+					/>
+				</TileContainer>
 				<TileContainer
 					id='hotspot-packages-list-tile'
 					flat
@@ -218,10 +218,6 @@ export default function HotspotPackagesScreen() {
 				>
 					<RecordList
 						id={hotspotId || 'hotspot-packages'}
-						title={t.packages.packagesOnHotspot.replace(
-							'{hotspotName}',
-							hotspotName || ''
-						)}
 						isEmpty={packages.length === 0}
 						emptyMessage={t.packages.noPackages}
 					>

@@ -1,10 +1,9 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useTransaction } from '@/context/TransactionContext';
@@ -153,48 +152,30 @@ export default function DocumentsScreen() {
 			onRefresh={handleRefresh}
 			refreshing={refreshing}
 		>
-			{/* Title row */}
-			<ThemedView
-				lightColor={bg}
-				darkColor={bg}
-				style={{
-					flexDirection: 'row',
-					alignItems: 'center',
-					gap: 12,
-					marginBottom: 12,
-				}}
+			<TileContainer
+				id='documents-header-tile'
+				flat
+				backgroundColor={bg}
+				style={{ width: '100%', marginBottom: 12 }}
 			>
-				<ThemedText
-					lightColor={bimColor}
-					darkColor={bimColor}
-					style={{
-						width: '100%',
-						textTransform: 'capitalize',
-						fontSize: fontSize['heading.one'],
-						fontWeight: fontWeight['heading.one'],
-					}}
-				>
-					{copy.title}
-				</ThemedText>
-			</ThemedView>
-
-			{/* Actions */}
-			<ThemedView
-				style={{ width: '100%', alignItems: 'flex-end', marginBottom: 12 }}
-				lightColor={bg}
-				darkColor={bg}
-			>
-				<ThemedButton
-					title={copy.addDocument}
-					numberOfLines={1}
-					onPress={handleAddDocument}
-					style={{ borderRadius: 8, width: 200 }}
-					darkColor={useThemeColor({}, 'actionButton')}
-					lightColor={useThemeColor({}, 'actionButton')}
-					darkTextColor={useThemeColor({}, 'authButtonText')}
-					lightTextColor={useThemeColor({}, 'authButtonText')}
+				<ScreenHeader
+					id='documents-header'
+					title={copy.title}
+					action={
+						<ThemedButton
+							title={copy.addDocument}
+							icon='plus'
+							numberOfLines={1}
+							onPress={handleAddDocument}
+							style={{ borderRadius: 8 }}
+							darkColor={useThemeColor({}, 'actionButton')}
+							lightColor={useThemeColor({}, 'actionButton')}
+							darkTextColor={useThemeColor({}, 'authButtonText')}
+							lightTextColor={useThemeColor({}, 'authButtonText')}
+						/>
+					}
 				/>
-			</ThemedView>
+			</TileContainer>
 
 			{/* Documents table */}
 			<TileContainer

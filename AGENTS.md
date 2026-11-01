@@ -17,6 +17,7 @@ stays visually and behaviourally consistent.
 
 | Need | Use |
 | --- | --- |
+| Screen title / description | `ScreenHeader` (`components/ScreenHeader.tsx`) |
 | Scrolling screen body | `ParallaxScrollView` (supports pull-to-refresh) |
 | Section container | `TileContainer` (`flat` inside a screen) |
 | Record list | `RecordList` + `RecordCard` (`components/RecordList.tsx`) |
@@ -24,6 +25,26 @@ stays visually and behaviourally consistent.
 | Modal / form | `OverlayContainer` (+ a per-form overlay in `views/`) |
 | Destructive confirm | `Prompt` (`components/Prompt.tsx`) |
 | Paging | `ListPagination` |
+
+Every screen opens with its own header tile, separated from the content below:
+
+```tsx
+<ScreenHeader
+  id='reports-header'
+  title={t.title}
+  description={t.description}
+  loading={loading}
+  action={canCreate ? <ThemedButton title={t.create} icon='plus' … /> : undefined}
+/>
+
+<TileContainer id='reports-tile' flat backgroundColor={background} …>
+  {/* content */}
+</TileContainer>
+```
+
+The header is a **sibling tile**, never the first rows of the content tile, and
+`RecordList` inside a screen does not repeat the title (`title`/`description`
+there are for sub-lists within a screen).
 
 Nested screens get a header back chevron from `useHeaderBack(parentPath)`;
 screens that sit directly under the Accounts hub use `useAccountsBack()`.
@@ -39,6 +60,12 @@ old value and silently drops characters when typed into quickly.
 Every action on a `RecordCard` must carry an icon. Text-only action buttons are
 not allowed: the icon is what tells users at a glance that a tile is
 interactive.
+
+Page-level actions belong in the **header container**, not in a floating row
+between the header and the content: pass a single button as `ScreenHeader`'s
+`action`, or a row of them as `children`. Every header action also carries an
+icon (`plus` for create, `documents`/`printer` for exports, `refresh` for
+retry, …). Form submit/reset buttons stay with the form they submit.
 
 | Intent | `icon` | `tone` |
 | --- | --- | --- |

@@ -1,10 +1,11 @@
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
+import { ThemedText } from '@/components/ThemedText';
 import type { RecordField, RecordTone } from '@/components/RecordList';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import TileContainer from '@/components/TileContainer';
-import { ThemedText } from '@/components/ThemedText';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
@@ -31,7 +32,7 @@ import type {
 } from '@/types';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 type TabKey = 'overview' | 'members' | 'vouchers' | 'withdrawals' | 'routers';
 
@@ -55,9 +56,7 @@ export default function AccountAnalyticsDetailScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
 	const mutedText = useThemeColor({}, 'mutedText');
-	const bim = useThemeColor({}, 'bim');
 
 	const [tab, setTab] = useState<TabKey>('overview');
 	const [account, setAccount] = useState<AnalyticsAccount | null>(null);
@@ -291,23 +290,24 @@ export default function AccountAnalyticsDetailScreen() {
 			refreshing={refreshing}
 		>
 			<TileContainer
+				id='account-detail-header-tile'
+				flat
+				backgroundColor={background}
+				style={styles.section}
+			>
+				<ScreenHeader
+					id='account-detail-header'
+					title={account?.name || t.detailTitle}
+					loading={loading}
+				/>
+			</TileContainer>
+
+			<TileContainer
 				id='account-detail-tile'
 				flat
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={2}
-					>
-						{account?.name || t.detailTitle}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
-
 				{account ? (
 					<SegmentedTabs tabs={tabs} activeKey={tab} onChange={(key) => setTab(key as TabKey)} />
 				) : null}

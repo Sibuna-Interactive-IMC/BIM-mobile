@@ -2,10 +2,10 @@ import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField } from '@/components/RecordList';
 import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedText } from '@/components/ThemedText';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
@@ -30,11 +30,9 @@ import type {
 } from '@/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-	ActivityIndicator,
 	Animated,
 	StyleSheet,
 	useAnimatedValue,
-	View,
 } from 'react-native';
 
 import ProfitWithdrawOverlay from '@/views/ProfitWithdrawOverlay';
@@ -66,8 +64,6 @@ export default function ProfitScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
 	const bim = useThemeColor({}, 'bim');
 	const white = useThemeColor({}, 'white');
 	const cancelButton = useThemeColor({}, 'cancelButton');
@@ -285,45 +281,42 @@ export default function ProfitScreen() {
 				refreshing={refreshing}
 			>
 				<TileContainer
+					id='profit-header-tile'
+					flat
+					backgroundColor={background}
+					style={styles.section}
+				>
+					<ScreenHeader
+						id='profit-header'
+						title={t.title}
+						description={isAdmin ? t.description : t.adminOnly}
+						loading={loading}
+						action={
+							isAdmin ? (
+								<ThemedButton
+									style={styles.headerButton}
+									title={t.withdrawAction}
+									icon='withdrawal'
+									numberOfLines={1}
+									onPress={openWithdraw}
+									lightColor={bim}
+									darkColor={bim}
+									lightTextColor={white}
+									darkTextColor={white}
+									iconColor={white}
+									textStyle={styles.headerButtonText}
+								/>
+							) : undefined
+						}
+					/>
+				</TileContainer>
+
+				<TileContainer
 					id='profit-tile'
 					flat
 					backgroundColor={background}
 					style={styles.section}
 				>
-					<View style={styles.titleRow}>
-						<ThemedText
-							style={[styles.screenTitle, { color: textColor }]}
-							lightColor={textColor}
-							darkColor={textColor}
-							numberOfLines={1}
-						>
-							{t.title}
-						</ThemedText>
-						{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-						{isAdmin ? (
-							<ThemedButton
-								style={styles.headerButton}
-								title={t.withdrawAction}
-								icon='withdrawal'
-								numberOfLines={1}
-								onPress={openWithdraw}
-								lightColor={bim}
-								darkColor={bim}
-								lightTextColor={white}
-								darkTextColor={white}
-								iconColor={white}
-								textStyle={styles.headerButtonText}
-							/>
-						) : null}
-					</View>
-					<ThemedText
-						style={[styles.description, { color: mutedText }]}
-						lightColor={mutedText}
-						darkColor={mutedText}
-					>
-						{isAdmin ? t.description : t.adminOnly}
-					</ThemedText>
-
 					{isAdmin ? (
 						<>
 							<RecordList

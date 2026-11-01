@@ -14,6 +14,7 @@ import { RecordCard, RecordList } from '@/components/RecordList';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
@@ -95,26 +96,13 @@ export default function HomeScreen() {
 	const headerText = useThemeColor({}, 'headers');
 	const textLight = useThemeColor({}, 'text', 'light');
 	const textDark = useThemeColor({}, 'text', 'dark');
-	const muted = useThemeColor({}, 'mutedText');
 	const iconTint = useThemeColor({}, 'iconTint');
 	const dayText = useThemeColor({}, 'dayText');
 	const dayIconBackground = useThemeColor({}, 'dayIconBackground');
-	const dayTransactionsBackground = useThemeColor(
-		{},
-		'dayTransactionsBackground'
-	);
 	const weekText = useThemeColor({}, 'weekText');
 	const weekIconBackground = useThemeColor({}, 'weekIconBackground');
-	const weekTransactionsBackground = useThemeColor(
-		{},
-		'weekTransactionsBackground'
-	);
 	const monthText = useThemeColor({}, 'monthText');
 	const monthIconBackground = useThemeColor({}, 'monthIconBackground');
-	const monthTransactionsBackground = useThemeColor(
-		{},
-		'monthTransactionsBackground'
-	);
 	const borderDark = useThemeColor({}, 'borderDark');
 	const bim = useThemeColor({}, 'bim');
 	const bimLight = useThemeColor({}, 'bim', 'light');
@@ -177,331 +165,332 @@ export default function HomeScreen() {
 				setSelectedOption(undefined);
 			}}
 		>
-			<ThemedView style={styles.titleContainer}>
-				<ThemedText
-					lightColor={screenTitleTextLight}
-					darkColor={screenTitleTextDark}
-					style={{ fontSize: 24, fontWeight: 'bold' }}
-				>
-					{translations[language].categories.dashboard.title}
-				</ThemedText>
-				{typeof lastDashboardUpdated !== 'undefined' &&
-					lastDashboardUpdated !== null && (
-						<ThemedText
-							lightColor={muted}
-							darkColor={muted}
-							style={{ fontSize: 12, marginLeft: 8 }}
-						>
-							{translateWithVariables(
-								translations[language].categories.dashboard?.lastUpdated ||
-								'Last updated: {time}',
-								{ time: lastUpdatedLabel }
-							)}
-						</ThemedText>
-					)}
-			</ThemedView>
-			<DashboardTile
-				id='todays-transactions'
-				amount={dailyPurchasesTotal ?? 0}
-				title={translations[language].categories.dashboard.todaysTransactions}
-				iconName='cash'
-				iconColor={iconTint}
-				titleColor={dayText}
-				iconBackgroundColor={dayIconBackground}
-				backgroundColor={dayTransactionsBackground}
-				iconSize={30}
-				language={language}
-			/>
-			<DashboardTile
-				id='weeks-transactions'
-				amount={weeklyPurchasesTotal ?? 0}
-				title={translations[language].categories.dashboard.weeksTransactions}
-				iconName='calendar'
-				iconColor={iconTint}
-				titleColor={weekText}
-				iconBackgroundColor={weekIconBackground}
-				backgroundColor={weekTransactionsBackground}
-				iconSize={30}
-				language={language}
-			/>
-			<DashboardTile
-				id='months-transactions'
-				amount={monthlyPurchasesTotal ?? 0}
-				title={translations[language].categories.dashboard.monthsTransactions}
-				iconName='monthlyCalendar'
-				iconColor={iconTint}
-				titleColor={monthText}
-				iconBackgroundColor={monthIconBackground}
-				backgroundColor={monthTransactionsBackground}
-				iconSize={30}
-				language={language}
-			/>
-			<DashboardTile
-				id='days-voucher-users'
-				amount={dailyVoucherUsersTotal ?? 0}
-				amountType='number'
-				titleColor={dayText}
-				title={translations[language].categories.dashboard.todaysVouchers}
-				backgroundColor={background}
-				language={language}
-			/>
-			<DashboardTile
-				id='weeks-voucher-users'
-				amount={weeklyVoucherUsersTotal ?? 0}
-				amountType='number'
-				titleColor={weekText}
-				title={translations[language].categories.dashboard.weeksVouchers}
-				backgroundColor={background}
-				language={language}
-			/>
-			<DashboardTile
-				id='months-voucher-users'
-				amount={monthlyVoucherUsersTotal ?? 0}
-				amountType='number'
-				titleColor={monthText}
-				title={translations[language].categories.dashboard.monthsVouchers}
-				backgroundColor={background}
-				language={language}
-			/>
 			<TileContainer
-				id='last-five-transactions'
+				id='home-header-tile'
 				flat
 				backgroundColor={background}
-				style={{
-					flexDirection: 'column',
-				}}
+				style={{ width: '100%' }}
 			>
-				<ThemedView
-					style={{ flex: 1 }}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
-					<ThemedText
-						lightColor={screenTitleTextLight}
-						darkColor={screenTitleTextDark}
-						style={{
-							width: '100%',
-							textTransform: 'capitalize',
-							fontSize: fontSize['heading.three'],
-							fontWeight: fontWeight['heading.three'],
-						}}
-					>
-						{translateWithVariables(
-							translations[language].categories.dashboard.lastTransactions,
-							{ number: 5 }
-						)}
-					</ThemedText>
-				</ThemedView>
-				<RecordList
-					id='dashboard-last-transactions'
-					isEmpty={renderTransactions.length === 0}
-					emptyMessage={translations[language].categories.transactions.noTransactions}
-				>
-					{renderTransactions.map((transaction, index) => (
-						<RecordCard
-							key={index}
-							id={`dashboard-transaction-${index}`}
-							fields={[
-								{
-									label: translations[language].categories.dashboard.routerName,
-									value: transaction.routerName || '—',
-								},
-								{
-									label: translations[language].categories.dashboard.amount,
-									value: transaction.amount,
-								},
-								{
-									label: translations[language].categories.dashboard.type,
-									value: transaction.method.type,
-								},
-								{
-									label: translations[language].categories.dashboard.date,
-									value: transaction.date.toLocaleDateString(),
-								},
-								...(isAdmin && transaction.gateway
-									? [
-										{
-											label: translations[language].categories.transactions.gateway,
-											value: transaction.gateway,
-										},
-									]
-									: []),
-							]}
-						/>
-					))}
-				</RecordList>
-				<ThemedView
-					style={{
-						width: '100%',
-						flex: 1,
-						alignItems: 'center',
-						justifyContent: 'center',
-					}}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
-					<ThemedButton
-						title={translations[
-							language
-						].categories.buttons.allTransactions?.toUpperCase()}
-						onPress={() => router.push('/(authenticated)/transactions')}
-						style={{
-							borderRadius: 8,
-						}}
-						darkColor={bimDark}
-						lightColor={bimLight}
-						darkTextColor={authButtonTextDark}
-						lightTextColor={authButtonTextLight}
-					/>
-				</ThemedView>
+				<ScreenHeader
+					id='home-header'
+					title={translations[language].categories.dashboard.title}
+					description={
+						typeof lastDashboardUpdated !== 'undefined' &&
+						lastDashboardUpdated !== null
+							? translateWithVariables(
+									translations[language].categories.dashboard?.lastUpdated ||
+										'Last updated: {time}',
+									{ time: lastUpdatedLabel }
+								)
+							: undefined
+					}
+				/>
 			</TileContainer>
 			<TileContainer
-				id='transaction-volume-chart'
-				backgroundColor={background}
-				style={{ flexDirection: 'column', overflow: 'hidden' }}
-			>
-				<ThemedView
-					style={{ flex: 1 }}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
-					<ThemedText
-						lightColor={screenTitleTextLight}
-						darkColor={screenTitleTextDark}
-						style={{
-							width: '100%',
-							textTransform: 'capitalize',
-							fontSize: fontSize['heading.three'],
-							fontWeight: fontWeight['heading.three'],
-						}}
-					>
-						{translateWithVariables(
-							translations[language].categories.dashboard.transVolume,
-							{ number: 7 }
-						)}
-					</ThemedText>
-				</ThemedView>
-				<ThemedView
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-					style={{
-						position: 'relative',
-					}}
-				>
-					<BarChart
-						data={{
-							labels: [
-								...(user?.dashboard?.chartData
-									? user.dashboard.chartData.map((c) =>
-										formatMMDD(new Date(c.date))
-									)
-									: (lastSevenDaysPurchases ?? []).map((p) =>
-										formatMMDD(p.date)
-									)),
-							],
-							datasets: [
-								{
-									data: [
-										...(user?.dashboard?.chartData
-											? user.dashboard.chartData.map((c) => c.total)
-											: (lastSevenDaysPurchases ?? []).map((p) => p.amount)),
-									],
-								},
-							],
-						}}
-						width={width - 30}
-						height={220}
-						yAxisSuffix=''
-						yAxisLabel=''
-						chartConfig={{
-							backgroundGradientFrom: background,
-							backgroundGradientTo: background,
-							decimalPlaces: 0,
-							color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-							labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
-						}}
-						style={{ marginVertical: 8, borderRadius: 8, left: -20 }}
-					/>
-				</ThemedView>
-			</TileContainer>
-			<TileContainer
-				id='router-balances'
+				id='home-content-tile'
 				flat
 				backgroundColor={background}
-				style={{ flexDirection: 'column', overflow: 'hidden' }}
+				style={{ width: '100%', gap: 12 }}
 			>
-				<ThemedView
-					style={{ flex: 1 }}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
-					<ThemedText
-						lightColor={screenTitleTextLight}
-						darkColor={screenTitleTextDark}
-						style={{
-							width: '100%',
-							textTransform: 'capitalize',
-							fontSize: fontSize['heading.three'],
-							fontWeight: fontWeight['heading.three'],
-						}}
-					>
-						{translations[language].categories.dashboard.routerBalances}
-					</ThemedText>
-				</ThemedView>
-				<ThemedView
+				<DashboardTile
+					id='todays-transactions'
+					amount={dailyPurchasesTotal ?? 0}
+					title={translations[language].categories.dashboard.todaysTransactions}
+					iconName='cash'
+					iconColor={iconTint}
+					titleColor={dayText}
+					iconBackgroundColor={dayIconBackground}
+					iconSize={30}
+					language={language}
+				/>
+				<DashboardTile
+					id='weeks-transactions'
+					amount={weeklyPurchasesTotal ?? 0}
+					title={translations[language].categories.dashboard.weeksTransactions}
+					iconName='calendar'
+					iconColor={iconTint}
+					titleColor={weekText}
+					iconBackgroundColor={weekIconBackground}
+					iconSize={30}
+					language={language}
+				/>
+				<DashboardTile
+					id='months-transactions'
+					amount={monthlyPurchasesTotal ?? 0}
+					title={translations[language].categories.dashboard.monthsTransactions}
+					iconName='monthlyCalendar'
+					iconColor={iconTint}
+					titleColor={monthText}
+					iconBackgroundColor={monthIconBackground}
+					iconSize={30}
+					language={language}
+				/>
+				<DashboardTile
+					id='days-voucher-users'
+					amount={dailyVoucherUsersTotal ?? 0}
+					amountType='number'
+					titleColor={dayText}
+					title={translations[language].categories.dashboard.todaysVouchers}
+					language={language}
+				/>
+				<DashboardTile
+					id='weeks-voucher-users'
+					amount={weeklyVoucherUsersTotal ?? 0}
+					amountType='number'
+					titleColor={weekText}
+					title={translations[language].categories.dashboard.weeksVouchers}
+					language={language}
+				/>
+				<DashboardTile
+					id='months-voucher-users'
+					amount={monthlyVoucherUsersTotal ?? 0}
+					amountType='number'
+					titleColor={monthText}
+					title={translations[language].categories.dashboard.monthsVouchers}
+					language={language}
+				/>
+				<TileContainer
+					id='last-five-transactions'
+					borderless
+					backgroundColor={background}
 					style={{
 						flexDirection: 'column',
-						paddingBottom: 10
 					}}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
 				>
-					{(user?.dashboard?.routerBalances
-						? user.dashboard.routerBalances.map((rb) => ({
-							name: rb.name,
-							location: '',
-							amount: rb.balance,
-						}))
-						: purchasesPerRouter ?? []
-					).map((router, index) => (
-						<ThemedView
-							key={index}
+					<ThemedView
+						style={{ flex: 1 }}
+						lightColor={backgroundLight}
+						darkColor={backgroundDark}
+					>
+						<ThemedText
+							lightColor={screenTitleTextLight}
+							darkColor={screenTitleTextDark}
 							style={{
-								flexDirection: 'row',
 								width: '100%',
-								paddingVertical: 5,
-								paddingHorizontal: 12,
-								justifyContent: 'space-between',
-								borderBottomWidth:
-									index === (purchasesPerRouter ?? []).length - 1 ? 1 : 0,
-								borderBottomColor: borderDark,
-								borderTopWidth: 1,
-								borderTopColor: borderDark,
+								textTransform: 'capitalize',
+								fontSize: fontSize['heading.three'],
+								fontWeight: fontWeight['heading.three'],
 							}}
-							lightColor={backgroundLight}
-							darkColor={backgroundDark}
 						>
-							<ThemedText
-								numberOfLines={1}
-								style={{ width: 150, overflow: 'hidden' }}
-								lightColor={textLight}
-								darkColor={textDark}
-							>
-								{router.name}
-							</ThemedText>
-							<ThemedText
+							{translateWithVariables(
+								translations[language].categories.dashboard.lastTransactions,
+								{ number: 5 }
+							)}
+						</ThemedText>
+					</ThemedView>
+					<RecordList
+						id='dashboard-last-transactions'
+						isEmpty={renderTransactions.length === 0}
+						emptyMessage={translations[language].categories.transactions.noTransactions}
+					>
+						{renderTransactions.map((transaction, index) => (
+							<RecordCard
+								key={index}
+								id={`dashboard-transaction-${index}`}
+								fields={[
+									{
+										label: translations[language].categories.dashboard.routerName,
+										value: transaction.routerName || '—',
+									},
+									{
+										label: translations[language].categories.dashboard.amount,
+										value: transaction.amount,
+									},
+									{
+										label: translations[language].categories.dashboard.type,
+										value: transaction.method.type,
+									},
+									{
+										label: translations[language].categories.dashboard.date,
+										value: transaction.date.toLocaleDateString(),
+									},
+									...(isAdmin && transaction.gateway
+										? [
+											{
+												label: translations[language].categories.transactions.gateway,
+												value: transaction.gateway,
+											},
+										]
+										: []),
+								]}
+							/>
+						))}
+					</RecordList>
+					<ThemedView
+						style={{
+							width: '100%',
+							flex: 1,
+							alignItems: 'center',
+							justifyContent: 'center',
+						}}
+						lightColor={backgroundLight}
+						darkColor={backgroundDark}
+					>
+						<ThemedButton
+							title={translations[
+								language
+							].categories.buttons.allTransactions?.toUpperCase()}
+							icon='transactions'
+							onPress={() => router.push('/(authenticated)/transactions')}
+							style={{
+								borderRadius: 8,
+							}}
+							darkColor={bimDark}
+							lightColor={bimLight}
+							darkTextColor={authButtonTextDark}
+							lightTextColor={authButtonTextLight}
+						/>
+					</ThemedView>
+				</TileContainer>
+				<TileContainer
+					id='transaction-volume-chart'
+				borderless
+					backgroundColor={background}
+					style={{ flexDirection: 'column', overflow: 'hidden' }}
+				>
+					<ThemedView
+						style={{ flex: 1 }}
+						lightColor={backgroundLight}
+						darkColor={backgroundDark}
+					>
+						<ThemedText
+							lightColor={screenTitleTextLight}
+							darkColor={screenTitleTextDark}
+							style={{
+								width: '100%',
+								textTransform: 'capitalize',
+								fontSize: fontSize['heading.three'],
+								fontWeight: fontWeight['heading.three'],
+							}}
+						>
+							{translateWithVariables(
+								translations[language].categories.dashboard.transVolume,
+								{ number: 7 }
+							)}
+						</ThemedText>
+					</ThemedView>
+					<ThemedView
+						lightColor={backgroundLight}
+						darkColor={backgroundDark}
+						style={{
+							position: 'relative',
+						}}
+					>
+						<BarChart
+							data={{
+								labels: [
+									...(user?.dashboard?.chartData
+										? user.dashboard.chartData.map((c) =>
+											formatMMDD(new Date(c.date))
+										)
+										: (lastSevenDaysPurchases ?? []).map((p) =>
+											formatMMDD(p.date)
+										)),
+								],
+								datasets: [
+									{
+										data: [
+											...(user?.dashboard?.chartData
+												? user.dashboard.chartData.map((c) => c.total)
+												: (lastSevenDaysPurchases ?? []).map((p) => p.amount)),
+										],
+									},
+								],
+							}}
+							width={width - 30}
+							height={220}
+							yAxisSuffix=''
+							yAxisLabel=''
+							chartConfig={{
+								backgroundGradientFrom: background,
+								backgroundGradientTo: background,
+								decimalPlaces: 0,
+								color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+								labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
+							}}
+							style={{ marginVertical: 8, borderRadius: 8, left: -20 }}
+						/>
+					</ThemedView>
+				</TileContainer>
+				<TileContainer
+					id='router-balances'
+					borderless
+					backgroundColor={background}
+					style={{ flexDirection: 'column', overflow: 'hidden' }}
+				>
+					<ThemedView
+						style={{ flex: 1 }}
+						lightColor={backgroundLight}
+						darkColor={backgroundDark}
+					>
+						<ThemedText
+							lightColor={screenTitleTextLight}
+							darkColor={screenTitleTextDark}
+							style={{
+								width: '100%',
+								textTransform: 'capitalize',
+								fontSize: fontSize['heading.three'],
+								fontWeight: fontWeight['heading.three'],
+							}}
+						>
+							{translations[language].categories.dashboard.routerBalances}
+						</ThemedText>
+					</ThemedView>
+					<ThemedView
+						style={{
+							flexDirection: 'column',
+							paddingBottom: 10
+						}}
+						lightColor={backgroundLight}
+						darkColor={backgroundDark}
+					>
+						{(user?.dashboard?.routerBalances
+							? user.dashboard.routerBalances.map((rb) => ({
+								name: rb.name,
+								location: '',
+								amount: rb.balance,
+							}))
+							: purchasesPerRouter ?? []
+						).map((router, index) => (
+							<ThemedView
+								key={index}
 								style={{
-									paddingHorizontal: 10,
-									fontWeight: fontWeight['heading.one']
+									flexDirection: 'row',
+									width: '100%',
+									paddingVertical: 5,
+									paddingHorizontal: 12,
+									justifyContent: 'space-between',
+									borderBottomWidth:
+										index === (purchasesPerRouter ?? []).length - 1 ? 1 : 0,
+									borderBottomColor: borderDark,
+									borderTopWidth: 1,
+									borderTopColor: borderDark,
 								}}
-								lightColor={headerText}
-								darkColor={headerText}
+								lightColor={backgroundLight}
+								darkColor={backgroundDark}
 							>
-								{formatAmount(router.amount)}
-							</ThemedText>
-						</ThemedView>
-					))}
-				</ThemedView>
+								<ThemedText
+									numberOfLines={1}
+									style={{ width: 150, overflow: 'hidden' }}
+									lightColor={textLight}
+									darkColor={textDark}
+								>
+									{router.name}
+								</ThemedText>
+								<ThemedText
+									style={{
+										paddingHorizontal: 10,
+										fontWeight: fontWeight['heading.one']
+									}}
+									lightColor={headerText}
+									darkColor={headerText}
+								>
+									{formatAmount(router.amount)}
+								</ThemedText>
+							</ThemedView>
+						))}
+					</ThemedView>
+				</TileContainer>
 			</TileContainer>
 		</ParallaxScrollView>
 	);

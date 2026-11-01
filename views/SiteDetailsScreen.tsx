@@ -500,8 +500,14 @@ export default function SiteDetailsScreen() {
 			{tab === 'site' ? (
 				<>
 					<TileContainer
-						id='site-overview-tile'
+						id='site-content-tile'
 						flat
+						backgroundColor={background}
+						style={{ width: '100%', gap: 12 }}
+					>
+					<TileContainer
+						id='site-overview-tile'
+						borderless
 						backgroundColor={background}
 						style={styles.section}
 					>
@@ -547,7 +553,7 @@ export default function SiteDetailsScreen() {
 
 					<TileContainer
 						id='site-access-points-tile'
-						flat
+						borderless
 						backgroundColor={background}
 						style={styles.section}
 					>
@@ -596,12 +602,19 @@ export default function SiteDetailsScreen() {
 							))}
 						</RecordList>
 					</TileContainer>
+					</TileContainer>
 				</>
 			) : (
 				<>
 					<TileContainer
-						id='site-expense-summary-tile'
+						id='site-expenses-content-tile'
 						flat
+						backgroundColor={background}
+						style={{ width: '100%', gap: 12 }}
+					>
+					<TileContainer
+						id='site-expense-summary-tile'
+						borderless
 						backgroundColor={background}
 						style={styles.section}
 					>
@@ -638,7 +651,7 @@ export default function SiteDetailsScreen() {
 
 					<TileContainer
 						id='site-expenses-tile'
-						flat
+						borderless
 						backgroundColor={background}
 						style={styles.section}
 					>
@@ -695,6 +708,7 @@ export default function SiteDetailsScreen() {
 								/>
 							))}
 						</RecordList>
+					</TileContainer>
 					</TileContainer>
 				</>
 			)}

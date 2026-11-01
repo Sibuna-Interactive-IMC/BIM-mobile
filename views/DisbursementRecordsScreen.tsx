@@ -5,8 +5,7 @@ import type { RecordBadge, RecordField, RecordTone } from '@/components/RecordLi
 import ThemedDatePicker from '@/components/ThemedDatePicker';
 import { ThemedDropdown } from '@/components/ThemedDropdown';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedText } from '@/components/ThemedText';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
@@ -26,12 +25,7 @@ import type {
 	GetDisbursementRecordsResponse,
 } from '@/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-	ActivityIndicator,
-	StyleSheet,
-	useAnimatedValue,
-	View,
-} from 'react-native';
+import { StyleSheet, useAnimatedValue, View } from 'react-native';
 
 import DisbursementDocumentsOverlay from '@/views/DisbursementDocumentsOverlay';
 
@@ -69,8 +63,6 @@ export default function DisbursementRecordsScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
 	const bim = useThemeColor({}, 'bim');
 	const white = useThemeColor({}, 'white');
 
@@ -254,29 +246,23 @@ export default function DisbursementRecordsScreen() {
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={1}
-					>
-						{t.title}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
-				<ThemedText
-					style={[styles.description, { color: mutedText }]}
-					lightColor={mutedText}
-					darkColor={mutedText}
-				>
-					{t.description}
-				</ThemedText>
+				<ScreenHeader
+					id='disbursement-header'
+					title={t.title}
+					description={t.description}
+					loading={loading}
+				/>
 			</TileContainer>
 
 			<TileContainer
-				id='disbursement-filters-tile'
+				id='disbursement-content-tile'
 				flat
+				backgroundColor={background}
+				style={{ width: '100%', gap: 12 }}
+			>
+			<TileContainer
+				id='disbursement-filters-tile'
+				borderless
 				backgroundColor={background}
 				style={styles.section}
 			>
@@ -367,7 +353,7 @@ export default function DisbursementRecordsScreen() {
 
 			<TileContainer
 				id='disbursement-records-tile'
-				flat
+				borderless
 				backgroundColor={background}
 				style={styles.section}
 			>
@@ -412,6 +398,7 @@ export default function DisbursementRecordsScreen() {
 						onNext={() => setPage((current) => Math.min(lastPage, current + 1))}
 					/>
 				) : null}
+			</TileContainer>
 			</TileContainer>
 
 			<DisbursementDocumentsOverlay

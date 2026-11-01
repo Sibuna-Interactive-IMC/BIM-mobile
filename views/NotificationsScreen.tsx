@@ -1,4 +1,5 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import ScreenHeader from '@/components/ScreenHeader';
 import { ThemedText } from '@/components/ThemedText';
 import TileContainer from '@/components/TileContainer';
 import { ThemedView } from '@/components/ThemedView';
@@ -29,9 +30,17 @@ export default function NotificationsScreen() {
 			containerStyle={{ flex: 1 }}
 			contentStyle={{ paddingHorizontal: 10 }}
 		>
-			<ThemedText style={styles.title} lightColor={headers} darkColor={headers}>
-				{translations[language].categories.notifications['title']}
-			</ThemedText>
+			<TileContainer
+				id='notifications-header-tile'
+				flat
+				backgroundColor={bg}
+				style={styles.headerTile}
+			>
+				<ScreenHeader
+					id='notifications-header'
+					title={translations[language].categories.notifications['title']}
+				/>
+			</TileContainer>
 			<TileContainer
 				id='notifications-list'
 				flat
@@ -109,5 +118,9 @@ const styles = StyleSheet.create({
 		fontSize: fontSize['heading.one'],
 		fontWeight: fontWeight['heading.one'],
 		marginBottom: 20,
+	},
+	headerTile: {
+		width: '100%',
+		marginBottom: 12,
 	},
 });

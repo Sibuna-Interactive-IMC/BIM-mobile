@@ -1,5 +1,5 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { ThemedText } from '@/components/ThemedText';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import type { IconSymbolName } from '@/components/ui/IconSymbol';
@@ -16,7 +16,7 @@ import type { AccountsSummary, GetAccountsSummaryResponse } from '@/types';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 type HubTileConfig = {
 	key: string;
@@ -32,10 +32,10 @@ type HubTileConfig = {
 function HubTile({ id, tile }: { id: string; tile: HubTileConfig }) {
 	const navigation = useRouter();
 	const background = useThemeColor({}, 'background');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
 	const border = useThemeColor({}, 'borderDark');
 	const white = useThemeColor({}, 'white');
+	const textColor = useThemeColor({}, 'text');
+	const mutedText = useThemeColor({}, 'mutedText');
 
 	return (
 		<Pressable
@@ -103,8 +103,6 @@ export default function AccountsScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
 	const bim = useThemeColor({}, 'bim');
 	const lime = useThemeColor({}, 'lime');
 	const lightBlue = useThemeColor({}, 'lightBlue');
@@ -280,30 +278,25 @@ export default function AccountsScreen() {
 			refreshing={refreshing}
 		>
 			<TileContainer
+				id='accounts-header-tile'
+				flat
+				backgroundColor={background}
+				style={styles.section}
+			>
+				<ScreenHeader
+					id='accounts-header'
+					title={t.title}
+					description={t.description}
+					loading={loading}
+				/>
+			</TileContainer>
+
+			<TileContainer
 				id='accounts-overview-tile'
 				flat
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={1}
-					>
-						{t.title}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
-				<ThemedText
-					style={[styles.description, { color: mutedText }]}
-					lightColor={mutedText}
-					darkColor={mutedText}
-				>
-					{t.description}
-				</ThemedText>
-
 				<View style={styles.tiles}>
 					{tiles.map((tile) => (
 						<HubTile key={tile.key} id={`account-tile-${tile.key}`} tile={tile} />

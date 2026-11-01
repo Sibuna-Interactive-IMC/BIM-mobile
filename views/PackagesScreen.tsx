@@ -6,6 +6,7 @@ import {
 	StyleSheet,
 	TouchableOpacity,
 	useAnimatedValue,
+	View,
 } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -14,6 +15,7 @@ import { SegmentedTab, SegmentedTabs } from '@/components/SegmentedTabs';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
@@ -1269,59 +1271,47 @@ export default function PackagesScreen() {
 				onRefresh={handleRefresh}
 				refreshing={refreshing}
 			>
-				<ThemedView
-					style={{ flexDirection: 'row', flexWrap: 'wrap' }}
-					lightColor={bg}
-					darkColor={bg}
+				<TileContainer
+					id='packages-header-tile'
+					flat
+					backgroundColor={bg}
+					style={{ width: '100%' }}
 				>
-					<ThemedText
-						lightColor={textColor}
-						darkColor={textColor}
-						style={styles.heading}
+					<ScreenHeader
+						id='packages-header'
+						title={t('title')}
+						description={t('subtitle')}
 					>
-						{t('title')}
-					</ThemedText>
-					<ThemedView
-						style={styles.headerActions}
-						lightColor={bg}
-						darkColor={bg}
-					>
-						{canManageProfiles ? (
+						<View style={styles.headerActions}>
+							{canManageProfiles ? (
+								<ThemedButton
+									title={t('createGlobalProfile')}
+									onPress={openCreateProfile}
+									style={styles.headerButton}
+									icon='plus'
+									darkColor={bimColor}
+									lightColor={bimColor}
+									darkTextColor={white}
+									lightTextColor={white}
+								/>
+							) : null}
 							<ThemedButton
-								title={t('createGlobalProfile')}
-								onPress={openCreateProfile}
-								style={styles.headerButton}
-								icon='plus'
-								darkColor={bimColor}
-								lightColor={bimColor}
-								darkTextColor={white}
-								lightTextColor={white}
+								title={buttonsCopy.portalLang}
+								onPress={() => router.replace('/(authenticated)/translation')}
+								style={[styles.headerButton, {
+									borderRadius: 8,
+									borderColor: skyMist,
+									borderWidth: 1,
+								}]}
+								icon='translate'
+								darkColor='transparent'
+								lightColor='transparent'
+								darkTextColor={tropicalBlue}
+								lightTextColor={tropicalBlue}
 							/>
-						) : null}
-						<ThemedButton
-							title={buttonsCopy.portalLang}
-							onPress={() => router.replace('/(authenticated)/translation')}
-							style={[styles.headerButton, {
-								borderRadius: 8,
-								borderColor: skyMist,
-								borderWidth: 1,
-							}]}
-							icon='translate'
-							darkColor='transparent'
-							lightColor='transparent'
-							darkTextColor={tropicalBlue}
-							lightTextColor={tropicalBlue}
-						/>
-					</ThemedView>
-				</ThemedView>
-
-				<ThemedText
-					style={styles.subtitle}
-					lightColor={mutedText}
-					darkColor={mutedText}
-				>
-					{t('subtitle')}
-				</ThemedText>
+						</View>
+					</ScreenHeader>
+				</TileContainer>
 
 				<ThemedView style={{ marginVertical: 8 }} lightColor={bg} darkColor={bg}>
 					<SegmentedTabs

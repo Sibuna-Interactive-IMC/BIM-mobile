@@ -4,7 +4,7 @@ import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { RecordCard, RecordList } from '@/components/RecordList';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useTransaction } from '@/context/TransactionContext';
@@ -326,6 +326,7 @@ export default function HotspotVouchersScreen() {
 						</ThemedText>
 						<ThemedButton
 							title={translations[language].categories.buttons.retry}
+							icon='refresh'
 							onPress={handleManualRetry}
 							lightColor={bim}
 							darkColor={bim}
@@ -334,6 +335,21 @@ export default function HotspotVouchersScreen() {
 						/>
 					</ThemedView>
 				) : (
+					<>
+					<TileContainer
+						id='hotspot-vouchers-header-tile'
+						flat
+						backgroundColor={background}
+						style={{ width: '100%', marginBottom: 10 }}
+					>
+						<ScreenHeader
+							id='hotspot-vouchers-header'
+							title={translateWithVariables(
+								translations[language].categories.vouchers.vouchersSubtitle,
+								{ hotspotName: hotSpotName ?? '', routerName: netRouter?.name ?? '' }
+							)}
+						/>
+					</TileContainer>
 					<TileContainer
 						id='hotspot-vouchers-list-tile'
 						flat
@@ -342,18 +358,12 @@ export default function HotspotVouchersScreen() {
 					>
 						<RecordList
 							id={vRId || 'hotspot-vouchers'}
-							title={translateWithVariables(
-								translations[language].categories.vouchers.vouchersSubtitle,
-								{
-									hotspotName: hotSpotName ?? '',
-									routerName: netRouter?.name ?? '',
-								}
-							)}
 							isEmpty={(usersResponse?.users?.length ?? 0) === 0}
 							emptyMessage={translations[language].categories.vouchers.noVouchers}
 							headerAction={
 								<ThemedButton
 									title={translations[language].categories.buttons.retry}
+							icon='refresh'
 									onPress={() => void handleRefresh()}
 									lightColor='transparent'
 									darkColor='transparent'
@@ -419,6 +429,7 @@ export default function HotspotVouchersScreen() {
 							})}
 						</RecordList>
 					</TileContainer>
+					</>
 				)}
 			</ThemedView>
 			</ParallaxScrollView>

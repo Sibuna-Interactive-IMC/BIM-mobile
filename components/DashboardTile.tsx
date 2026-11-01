@@ -33,8 +33,12 @@ export default function DashboardTile({
 	const dayIconBg = useThemeColor({}, 'dayIconBackground');
 	const dayText = useThemeColor({}, 'dayText');
 	const valueText = useThemeColor({}, 'valueText');
+	const surface = useThemeColor({}, 'background');
 	return (
-		<TileContainer id={id} backgroundColor={backgroundColor}>
+		// Same surface and shadow as every other tile: the day/week/month cards
+		// used to carry their own tinted fill, which made them read differently
+		// from the rest of the dashboard.
+		<TileContainer id={id} backgroundColor={backgroundColor ?? surface}>
 			<ThemedView
 				style={{
 					display: !!iconName ? 'flex' : 'none',

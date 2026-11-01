@@ -1,9 +1,9 @@
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField } from '@/components/RecordList';
 import TileContainer from '@/components/TileContainer';
-import { ThemedText } from '@/components/ThemedText';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
@@ -18,7 +18,7 @@ import type { AnalyticsAccount, GetAnalyticsAccountsResponse } from '@/types';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 const PAGE_SIZE = 20;
 
@@ -34,9 +34,6 @@ export default function AccountsAnalyticsScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
-	const bim = useThemeColor({}, 'bim');
 
 	const [accounts, setAccounts] = useState<AnalyticsAccount[]>([]);
 	const [page, setPage] = useState(1);
@@ -112,29 +109,25 @@ export default function AccountsAnalyticsScreen() {
 			refreshing={refreshing}
 		>
 			<TileContainer
+				id='accounts-analytics-header-tile'
+				flat
+				backgroundColor={background}
+				style={styles.section}
+			>
+				<ScreenHeader
+					id='accounts-analytics-header'
+					title={t.title}
+					description={isAdmin ? t.description : t.adminOnly}
+					loading={loading}
+				/>
+			</TileContainer>
+
+			<TileContainer
 				id='accounts-analytics-tile'
 				flat
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={1}
-					>
-						{t.title}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
-				<ThemedText
-					style={[styles.description, { color: mutedText }]}
-					lightColor={mutedText}
-					darkColor={mutedText}
-				>
-					{isAdmin ? t.description : t.adminOnly}
-				</ThemedText>
 
 				{isAdmin ? (
 					<>

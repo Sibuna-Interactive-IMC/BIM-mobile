@@ -1,5 +1,6 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField } from '@/components/RecordList';
 import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -23,7 +24,7 @@ import type {
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
 type PeriodKey = 'today' | 'week' | 'month';
@@ -132,8 +133,6 @@ export default function BusinessAnalyticsScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
 	const bim = useThemeColor({}, 'bim');
 
 	const [summary, setSummary] = useState<BusinessAnalyticsSummary | null>(null);
@@ -202,30 +201,25 @@ export default function BusinessAnalyticsScreen() {
 			refreshing={refreshing}
 		>
 			<TileContainer
+				id='business-analytics-header-tile'
+				flat
+				backgroundColor={background}
+				style={styles.container}
+			>
+				<ScreenHeader
+					id='business-analytics-header'
+					title={t.title}
+					description={canView ? t.description : t.staffOnly}
+					loading={loading}
+				/>
+			</TileContainer>
+
+			<TileContainer
 				id='business-analytics-tile'
 				flat
 				backgroundColor={background}
 				style={styles.container}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={1}
-					>
-						{t.title}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
-				<ThemedText
-					style={[styles.description, { color: mutedText }]}
-					lightColor={mutedText}
-					darkColor={mutedText}
-				>
-					{canView ? t.description : t.staffOnly}
-				</ThemedText>
-
 				{canView ? (
 					<>
 						<StatSection

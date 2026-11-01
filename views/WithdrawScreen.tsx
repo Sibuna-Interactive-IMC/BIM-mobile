@@ -1,6 +1,7 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import useAccountsBack from '@/hooks/useAccountsBack';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { ThemedView } from '@/components/ThemedView';
 import translations from '@/constants/Trans';
@@ -76,6 +77,18 @@ export default function WithdrawScreen() {
 		>
 		<ThemedView lightColor={bg} darkColor={bg} style={styles.container}>
 			<TileContainer
+				id='withdraw-header-tile'
+				flat
+				backgroundColor={bg}
+				style={{ width: '100%', marginBottom: 12 }}
+			>
+				<ScreenHeader
+					id='withdraw-header'
+					title={translations[language].categories.withdraw.title}
+					description={translations[language].categories.withdraw.subtitle}
+				/>
+			</TileContainer>
+			<TileContainer
 				id='withdraw-list-tile'
 				flat
 				backgroundColor={bg}
@@ -83,10 +96,6 @@ export default function WithdrawScreen() {
 			>
 				<RecordList
 					id='withdraw-router-list'
-					title={translations[language].categories.withdraw.title}
-					description={
-						translations[language].categories.withdraw.subtitle
-					}
 					isEmpty={routers?.length === 0}
 					emptyMessage={translations[language].categories.withdraw.noRouters}
 				>

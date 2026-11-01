@@ -6,7 +6,7 @@ import { ThemedButton } from '@/components/ThemedButton';
 import ThemedDatePicker from '@/components/ThemedDatePicker';
 import { ThemedDropdown } from '@/components/ThemedDropdown';
 import { ThemedText } from '@/components/ThemedText';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { apiBaseUrl } from '@/constants/API';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
@@ -27,7 +27,6 @@ import type { TransactionFilters } from '@/services/UserService';
 import type { ApiTransaction, GetTransactionsResponse } from '@/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-	ActivityIndicator,
 	Linking,
 	StyleSheet,
 	View,
@@ -58,7 +57,6 @@ export default function TransactionsScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
 	const mutedText = useThemeColor({}, 'mutedText');
 	const bim = useThemeColor({}, 'bim');
 	const white = useThemeColor({}, 'white');
@@ -288,29 +286,56 @@ export default function TransactionsScreen() {
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={1}
-					>
-						{t.title}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
-				<ThemedText
-					style={[styles.description, { color: mutedText }]}
-					lightColor={mutedText}
-					darkColor={mutedText}
+				<ScreenHeader
+					id='transactions-header'
+					title={t.title}
+					description={t.description}
+					loading={loading}
 				>
-					{t.description}
-				</ThemedText>
+					<View style={styles.actions}>
+						<ThemedButton
+							title={t.exportExcel}
+							icon='documents'
+							onPress={() => {
+								void exportLedger('excel');
+							}}
+							numberOfLines={1}
+							style={styles.actionButton}
+							lightColor={lime}
+							darkColor={lime}
+							lightTextColor={white}
+							darkTextColor={white}
+							iconColor={white}
+							textStyle={styles.actionText}
+						/>
+						<ThemedButton
+							title={t.exportPdf}
+							icon='printer'
+							onPress={() => {
+								void exportLedger('pdf');
+							}}
+							numberOfLines={1}
+							style={styles.actionButton}
+							lightColor={dangerButton}
+							darkColor={dangerButton}
+							lightTextColor={white}
+							darkTextColor={white}
+							iconColor={white}
+							textStyle={styles.actionText}
+						/>
+					</View>
+				</ScreenHeader>
 			</TileContainer>
 
 			<TileContainer
-				id='transactions-filters-tile'
+				id='transactions-content-tile'
 				flat
+				backgroundColor={background}
+				style={{ width: '100%', gap: 12 }}
+			>
+			<TileContainer
+				id='transactions-filters-tile'
+				borderless
 				backgroundColor={background}
 				style={styles.section}
 			>
@@ -409,44 +434,11 @@ export default function TransactionsScreen() {
 						</ThemedText>
 					</View>
 				</View>
-
-				<View style={styles.actions}>
-					<ThemedButton
-						title={t.exportExcel}
-						icon='documents'
-						onPress={() => {
-							void exportLedger('excel');
-						}}
-						numberOfLines={1}
-						style={styles.actionButton}
-						lightColor={lime}
-						darkColor={lime}
-						lightTextColor={white}
-						darkTextColor={white}
-						iconColor={white}
-						textStyle={styles.actionText}
-					/>
-					<ThemedButton
-						title={t.exportPdf}
-						icon='printer'
-						onPress={() => {
-							void exportLedger('pdf');
-						}}
-						numberOfLines={1}
-						style={styles.actionButton}
-						lightColor={dangerButton}
-						darkColor={dangerButton}
-						lightTextColor={white}
-						darkTextColor={white}
-						iconColor={white}
-						textStyle={styles.actionText}
-					/>
-				</View>
 			</TileContainer>
 
 			<TileContainer
 				id='transactions-list-tile'
-				flat
+				borderless
 				backgroundColor={background}
 				style={styles.section}
 			>
@@ -477,6 +469,7 @@ export default function TransactionsScreen() {
 						onNext={() => setPage((current) => Math.min(lastPage, current + 1))}
 					/>
 				) : null}
+			</TileContainer>
 			</TileContainer>
 		</ParallaxScrollView>
 	);

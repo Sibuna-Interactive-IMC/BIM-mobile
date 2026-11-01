@@ -1,6 +1,7 @@
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField, RecordTone } from '@/components/RecordList';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import TileContainer from '@/components/TileContainer';
@@ -25,7 +26,7 @@ import type {
 } from '@/types';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 const PAGE_SIZE = 20;
 
@@ -66,7 +67,6 @@ export default function BusinessListScreen() {
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
 	const textColor = useThemeColor({}, 'text');
 	const mutedText = useThemeColor({}, 'mutedText');
-	const bim = useThemeColor({}, 'bim');
 
 	const [period, setPeriod] = useState<BusinessListPeriod>(initialPeriod);
 	const [ownerId, setOwnerId] = useState<number | null>(null);
@@ -186,22 +186,25 @@ export default function BusinessListScreen() {
 			refreshing={refreshing}
 		>
 			<TileContainer
+				id='business-list-header-tile'
+				flat
+				backgroundColor={background}
+				style={styles.section}
+			>
+				<ScreenHeader
+					id='business-list-header'
+					title={title}
+					loading={loading}
+				/>
+			</TileContainer>
+
+			<TileContainer
 				id='business-list-tile'
 				flat
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={2}
-					>
-						{title}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
+
 
 				{canView ? (
 					<>

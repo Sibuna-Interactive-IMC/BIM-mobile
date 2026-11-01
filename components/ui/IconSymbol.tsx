@@ -118,7 +118,8 @@ const MAPPING: IconMapping = {
 	settings: { type: 'ionicon', name: 'settings' },
 	close: { type: 'ionicon', name: 'close' },
 	package: { type: 'material-community', name: 'package-variant-closed' },
-	info: { type: 'material-community', name: 'information-outline' }
+	info: { type: 'material-community', name: 'information-outline' },
+	refresh: { type: 'material-community', name: 'refresh' }
 };
 
 /**

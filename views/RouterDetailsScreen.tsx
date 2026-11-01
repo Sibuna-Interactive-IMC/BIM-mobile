@@ -1,6 +1,7 @@
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import Prompt from "@/components/Prompt";
 import { RecordCard, RecordList } from "@/components/RecordList";
+import ScreenHeader from "@/components/ScreenHeader";
 import TileContainer from "@/components/TileContainer";
 import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { ThemedButton } from "@/components/ThemedButton";
@@ -490,9 +491,17 @@ export default function RouterDetailsScreen() {
                 onRefresh={handleRefresh}
                 refreshing={loading}
             >
-                <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-start' }} lightColor={background} darkColor={background}>
-                    <ThemedText style={{ fontSize: 20, fontWeight: 'bold', color: titleText }}>{translations[language].categories.routers.routerDetails}</ThemedText>
-                </ThemedView>
+                                <TileContainer
+                    id='router-details-header-tile'
+                    flat
+                    backgroundColor={background}
+                    style={{ width: '100%' }}
+                >
+                    <ScreenHeader
+                        id='router-details-header'
+                        title={translations[language].categories.routers.routerDetails}
+                    />
+                </TileContainer>
                 <ThemedView style={{ marginVertical: 10 }} lightColor={background} darkColor={background}>
                     <SegmentedTabs
                         activeKey={activeTab}
@@ -1070,6 +1079,7 @@ export default function RouterDetailsScreen() {
                                 <ThemedText style={{ color: red, flex: 1 }}>{trafficInterfaceError}</ThemedText>
                                 <ThemedButton
                                     title={translations[language].categories.routers.trafficRetry || 'Retry'}
+                                    icon='refresh'
                                     onPress={handleOpenTrafficTab}
                                     lightColor={background}
                                     darkColor={background}

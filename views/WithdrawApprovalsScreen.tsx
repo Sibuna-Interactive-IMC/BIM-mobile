@@ -1,9 +1,9 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField } from '@/components/RecordList';
 import TileContainer from '@/components/TileContainer';
-import { ThemedText } from '@/components/ThemedText';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
@@ -25,7 +25,7 @@ import type {
 	WithdrawalApproval,
 } from '@/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, useAnimatedValue, View } from 'react-native';
+import { StyleSheet, useAnimatedValue } from 'react-native';
 
 type PendingDecision =
 	| { kind: 'approve'; approval: WithdrawalApproval }
@@ -44,9 +44,6 @@ export default function WithdrawApprovalsScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
-	const mutedText = useThemeColor({}, 'mutedText');
-	const bim = useThemeColor({}, 'bim');
 	const white = useThemeColor({}, 'white');
 	const cancelButton = useThemeColor({}, 'cancelButton');
 	const dangerButton = useThemeColor({}, 'dangerButton');
@@ -198,30 +195,25 @@ export default function WithdrawApprovalsScreen() {
 				refreshing={refreshing}
 			>
 				<TileContainer
+					id='withdraw-approvals-header-tile'
+					flat
+					backgroundColor={background}
+					style={styles.section}
+				>
+					<ScreenHeader
+						id='withdraw-approvals-header'
+						title={t.title}
+						description={t.description}
+						loading={loading}
+					/>
+				</TileContainer>
+
+				<TileContainer
 					id='withdraw-approvals-tile'
 					flat
 					backgroundColor={background}
 					style={styles.section}
 				>
-					<View style={styles.titleRow}>
-						<ThemedText
-							style={[styles.screenTitle, { color: textColor }]}
-							lightColor={textColor}
-							darkColor={textColor}
-							numberOfLines={1}
-						>
-							{t.title}
-						</ThemedText>
-						{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-					</View>
-					<ThemedText
-						style={[styles.description, { color: mutedText }]}
-						lightColor={mutedText}
-						darkColor={mutedText}
-					>
-						{t.description}
-					</ThemedText>
-
 					<RecordList
 						id='withdraw-approvals-pending'
 						title={t.awaitingYou}

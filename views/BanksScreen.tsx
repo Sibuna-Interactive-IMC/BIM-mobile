@@ -2,11 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useTransaction } from '@/context/TransactionContext';
@@ -22,7 +20,6 @@ export default function BanksScreen() {
 	const { user, language } = useGeneral();
 
 	const bg = useThemeColor({}, 'background');
-	const bim = useThemeColor({}, 'bim');
 	const actionButton = useThemeColor({}, 'actionButton');
 	const authButtonText = useThemeColor({}, 'authButtonText');
 	const copy = translations[language]?.categories?.banks ?? translations.en.categories.banks;
@@ -120,46 +117,30 @@ export default function BanksScreen() {
 			containerStyle={{ flex: 1 }}
 			contentStyle={{ paddingHorizontal: 10 }}
 		>
-			<ThemedView
-				lightColor={bg}
-				darkColor={bg}
-				style={{
-					flexDirection: 'row',
-					alignItems: 'center',
-					gap: 12,
-					marginBottom: 12,
-				}}
+						<TileContainer
+				id='banks-header-tile'
+				flat
+				backgroundColor={bg}
+				style={{ width: '100%', marginBottom: 12 }}
 			>
-				<ThemedText
-					lightColor={bim}
-					darkColor={bim}
-					style={{
-						width: '100%',
-						textTransform: 'capitalize',
-						fontSize: fontSize['heading.one'],
-						fontWeight: fontWeight['heading.one'],
-					}}
-				>
-					{copy.title}
-				</ThemedText>
-			</ThemedView>
-
-			<ThemedView
-				style={{ width: '100%', alignItems: 'flex-end', marginBottom: 12 }}
-				lightColor={bg}
-				darkColor={bg}
-			>
-				<ThemedButton
-					title={copy.addAccount}
-					numberOfLines={1}
-					onPress={handleAddAccount}
-					style={{ borderRadius: 8, width: 160 }}
-					darkColor={actionButton}
-					lightColor={actionButton}
-					darkTextColor={authButtonText}
-					lightTextColor={authButtonText}
+				<ScreenHeader
+					id='banks-header'
+					title={copy.title}
+					action={
+						<ThemedButton
+							title={copy.addAccount}
+							icon='plus'
+							numberOfLines={1}
+							onPress={handleAddAccount}
+							style={{ borderRadius: 8 }}
+							darkColor={actionButton}
+							lightColor={actionButton}
+							darkTextColor={authButtonText}
+							lightTextColor={authButtonText}
+						/>
+					}
 				/>
-			</ThemedView>
+			</TileContainer>
 
 			<TileContainer
 				id='banks-list-tile'

@@ -1,6 +1,7 @@
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField } from '@/components/RecordList';
 import TileContainer from '@/components/TileContainer';
 import { ThemedText } from '@/components/ThemedText';
@@ -19,7 +20,7 @@ import type {
 	GetBusinessRoutersResponse,
 } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 const PAGE_SIZE = 20;
 
@@ -35,9 +36,7 @@ export default function BusinessRoutersScreen() {
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
-	const textColor = useThemeColor({}, 'text');
 	const mutedText = useThemeColor({}, 'mutedText');
-	const bim = useThemeColor({}, 'bim');
 
 	const [routers, setRouters] = useState<BusinessRouterRow[]>([]);
 	const [page, setPage] = useState(1);
@@ -106,22 +105,25 @@ export default function BusinessRoutersScreen() {
 			refreshing={refreshing}
 		>
 			<TileContainer
+				id='business-routers-header-tile'
+				flat
+				backgroundColor={background}
+				style={styles.section}
+			>
+				<ScreenHeader
+					id='business-routers-header'
+					title={t.topRoutersTitle}
+					loading={loading}
+				/>
+			</TileContainer>
+
+			<TileContainer
 				id='business-routers-tile'
 				flat
 				backgroundColor={background}
 				style={styles.section}
 			>
-				<View style={styles.titleRow}>
-					<ThemedText
-						style={[styles.screenTitle, { color: textColor }]}
-						lightColor={textColor}
-						darkColor={textColor}
-						numberOfLines={2}
-					>
-						{t.topRoutersTitle}
-					</ThemedText>
-					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-				</View>
+
 
 				{canView ? (
 					<>

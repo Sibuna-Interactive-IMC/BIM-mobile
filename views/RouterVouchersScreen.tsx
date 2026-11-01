@@ -1,6 +1,6 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
-import TileContainer from '@/components/TileContainer';
+import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { ThemedView } from '@/components/ThemedView';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
@@ -143,16 +143,27 @@ export default function RouterVouchersScreen() {
 			onRefresh={handleRefresh}
 			refreshing={refreshing}
 		>
-			<TileContainer
+						<TileContainer
+				id='router-vouchers-header-tile'
+				flat
+				backgroundColor={background}
+				style={{ width: '100%', marginBottom: 10 }}
+			>
+				<ScreenHeader
+					id='router-vouchers-header'
+					title={translations[language].categories.hotspots.title}
+					description={currentRouter?.name}
+				/>
+			</TileContainer>
+
+<TileContainer
 				id='router-vouchers-list-tile'
 				flat
 				backgroundColor={background}
 				style={{ flexDirection: 'column' }}
 			>
 				<RecordList
-					id={packageRouterHotspotsListId.current}
-					title={translations[language].categories.hotspots.title}
-					description={currentRouter?.name}
+					id={packageRouterHotspotsListId.current}
 					isEmpty={hotspots.length === 0}
 					emptyMessage={translations[language].categories.hotspots.noHotspots}
 				>

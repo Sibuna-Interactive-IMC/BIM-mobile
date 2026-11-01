@@ -1,6 +1,7 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { RecordField, RecordTone } from '@/components/RecordList';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -41,7 +42,6 @@ import { useRouter } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-	ActivityIndicator,
 	Animated,
 	Pressable,
 	StyleSheet,
@@ -802,27 +802,17 @@ export default function VouchersScreen() {
 				refreshing={refreshing}
 			>
 				<TileContainer
-					id='vouchers-overview-tile'
+					id='vouchers-header-tile'
 					flat
 					backgroundColor={background}
 					style={styles.section}
 				>
-					<ThemedView
-						style={styles.overviewHeader}
-						lightColor='transparent'
-						darkColor='transparent'
+					<ScreenHeader
+						id='vouchers-header'
+						title={t.title}
+						description={t.description}
+						loading={loading}
 					>
-						<View style={styles.titleRow}>
-							<ThemedText
-								style={[styles.screenTitle, { color: textColor }]}
-								lightColor={textColor}
-								darkColor={textColor}
-								numberOfLines={1}
-							>
-								{t.title}
-							</ThemedText>
-							{loading ? <ActivityIndicator size='small' color={bim} /> : null}
-						</View>
 						<View style={styles.headerActions}>
 							<ThemedButton
 								style={styles.headerButton}
@@ -857,26 +847,32 @@ export default function VouchersScreen() {
 								textStyle={styles.headerButtonText}
 							/>
 						</View>
-					</ThemedView>
-					<ThemedText
-						style={[styles.description, { color: mutedText }]}
-						lightColor={mutedText}
-						darkColor={mutedText}
-					>
-						{t.description}
-					</ThemedText>
-					{updatedAt ? (
-						<ThemedText
-							style={[styles.updated, { color: mutedText }]}
-							lightColor={mutedText}
-							darkColor={mutedText}
-						>
-							{translateWithVariables(t.updated, {
-								time: updatedAt.toLocaleTimeString(),
-							})}
-						</ThemedText>
-					) : null}
+						{updatedAt ? (
+							<ThemedText
+								style={[styles.updated, { color: mutedText }]}
+								lightColor={mutedText}
+								darkColor={mutedText}
+							>
+								{translateWithVariables(t.updated, {
+									time: updatedAt.toLocaleTimeString(),
+								})}
+							</ThemedText>
+						) : null}
+					</ScreenHeader>
+				</TileContainer>
 
+			<TileContainer
+				id='vouchers-content-tile'
+				flat
+				backgroundColor={background}
+				style={{ width: '100%', gap: 12 }}
+			>
+				<TileContainer
+					id='vouchers-overview-tile'
+					borderless
+					backgroundColor={background}
+					style={styles.section}
+				>
 					<View style={styles.statsGrid}>
 						{statusTiles.map((tile) => (
 							<StatTile
@@ -909,7 +905,7 @@ export default function VouchersScreen() {
 
 				<TileContainer
 					id='vouchers-users-tile'
-					flat
+					borderless
 					backgroundColor={background}
 					style={styles.section}
 				>
@@ -1080,6 +1076,7 @@ export default function VouchersScreen() {
 						/>
 					</ThemedView>
 				</TileContainer>
+			</TileContainer>
 			</ParallaxScrollView>
 
 			<Prompt
