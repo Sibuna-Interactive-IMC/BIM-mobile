@@ -1,573 +1,545 @@
+import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
+import type { RecordBadge, RecordField, RecordTone } from '@/components/RecordList';
 import { ThemedButton } from '@/components/ThemedButton';
 import ThemedDatePicker from '@/components/ThemedDatePicker';
 import { ThemedDropdown } from '@/components/ThemedDropdown';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import TileContainer from '@/components/TileContainer';
-import useAccountsBack from '@/hooks/useAccountsBack';
 import { apiBaseUrl } from '@/constants/API';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
-import { useTransaction } from '@/context/TransactionContext';
-import { formatAmount } from '@/helpers';
+import {
+	formatAmount,
+	formatDateTime,
+	ShowAlert,
+	toApiDate,
+} from '@/helpers';
+import { getApiData, getApiPagination } from '@/helpers/apiResponse';
 import { isPlatformAdmin } from '@/helpers/permissions';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import useAccountsBack from '@/hooks/useAccountsBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
+import { fetchPurchases } from '@/services/UserService';
 import type { TransactionFilters } from '@/services/UserService';
+import type { ApiTransaction, GetTransactionsResponse } from '@/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, View } from 'react-native';
+import {
+	ActivityIndicator,
+	Linking,
+	StyleSheet,
+	View,
+} from 'react-native';
 
+const PAGE_SIZE = 20;
+
+const STATUS_TONES: Record<string, RecordTone> = {
+	successful: 'success',
+	completed: 'success',
+	approved: 'success',
+	pending_approval: 'info',
+	pending: 'warning',
+	reversed: 'muted',
+	failed: 'danger',
+	rejected: 'danger',
+};
+
+/** `GET /transactions` — the paged, filterable credit/debit ledger. */
 export default function TransactionsScreen() {
 	useTrackHistory('/(authenticated)/transactions');
 	useAccountsBack();
-	// Theme helpers
+	const { user, language, authToken } = useGeneral();
+	const t = translations[language].categories.transactions;
+	const loadingCopy = translations[language].categories.dashboard.loading;
+	const isAdmin = isPlatformAdmin(user);
+
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
+	const textColor = useThemeColor({}, 'text');
+	const mutedText = useThemeColor({}, 'mutedText');
 	const bim = useThemeColor({}, 'bim');
-	const bimLight = useThemeColor({}, 'bim', 'light');
-	const bimDark = useThemeColor({}, 'bim', 'dark');
-	const textLight = useThemeColor({}, 'text', 'light');
-	const textDark = useThemeColor({}, 'text', 'dark');
-	const whiteLight = useThemeColor({}, 'white', 'light');
-	const whiteDark = useThemeColor({}, 'white', 'dark');
+	const white = useThemeColor({}, 'white');
 	const lime = useThemeColor({}, 'lime');
 	const dangerButton = useThemeColor({}, 'dangerButton');
-	const mutedTextLight = useThemeColor({}, 'mutedText', 'light');
-	const mutedTextDark = useThemeColor({}, 'mutedText', 'dark');
-	const { purchases, fetchPurchases, totalAmount } = useTransaction();
-	const { user, language, authToken } = useGeneral();
 
+	const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
+	const [totalAmount, setTotalAmount] = useState(0);
+	const [page, setPage] = useState(1);
+	const [lastPage, setLastPage] = useState(1);
+	const [loading, setLoading] = useState(false);
 	const [refreshing, setRefreshing] = useState(false);
-	const [filterLoading, setFilterLoading] = useState(false);
 
-	// Keep a ref of the active filters so the auto-fetch interval can reuse them
-	const activeFiltersRef = useRef<TransactionFilters | undefined>(undefined);
+	// Draft filters are edited in the form; "Apply" copies them into the set the
+	// request uses, so typing/picking alone never fires a request.
+	const [startDate, setStartDate] = useState<Date | null>(null);
+	const [endDate, setEndDate] = useState<Date | null>(null);
+	const [statusLabel, setStatusLabel] = useState('');
+	const [typeLabel, setTypeLabel] = useState('');
+	const [applied, setApplied] = useState<TransactionFilters>({});
+	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+	const statusRef = useRef<View>(null);
+	const typeRef = useRef<View>(null);
+
+	const statusOptions = useMemo(
+		() => [t.all, t.pending, t.successful, t.failed],
+		[t.all, t.failed, t.pending, t.successful]
+	);
+	const typeOptions = useMemo(
+		() => [t.all, t.credit, t.debit],
+		[t.all, t.credit, t.debit]
+	);
+
+	const load = useCallback(async () => {
+		if (!authToken) return;
+		setLoading(true);
+		try {
+			const res = await fetchPurchases(authToken, {
+				...applied,
+				page,
+				per_page: PAGE_SIZE,
+			});
+			if (!res.ok) {
+				setTransactions([]);
+				return;
+			}
+			const body: GetTransactionsResponse = await res.json();
+			const data = getApiData<NonNullable<GetTransactionsResponse['data']>>(body);
+			// The API returns this page's rows at `transactions`; older payloads
+			// nested a Laravel paginator there instead.
+			const rows = data?.transactions;
+			setTransactions(Array.isArray(rows) ? rows : (rows?.data ?? []));
+			setLastPage(
+				Math.max(
+					1,
+					getApiPagination(body, 'transactions')?.last_page ??
+						data?.transactions_metadata?.last_page ??
+						1
+				)
+			);
+			const total = Number.parseFloat(String(data?.total_amount ?? ''));
+			setTotalAmount(Number.isFinite(total) ? total : 0);
+		} catch (e) {
+			console.error('[TransactionsScreen] load failed', e);
+			setTransactions([]);
+		} finally {
+			setLoading(false);
+		}
+	}, [applied, authToken, page]);
+
+	useEffect(() => {
+		void load();
+	}, [load]);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
 		try {
-			await fetchPurchases(activeFiltersRef.current);
-		} catch (e) {
-			console.error('[TransactionsScreen] refresh failed', e);
+			await load();
 		} finally {
 			setRefreshing(false);
 		}
-	}, [fetchPurchases]);
-	const t = translations[language].categories.transactions;
-	const isAdmin = isPlatformAdmin(user);
-	console.log({ router: purchases && purchases[0]?.router });
+	}, [load]);
 
-	// Filters state
-	const [startDate, setStartDate] = useState<Date | null>(null);
-	const [endDate, setEndDate] = useState<Date | null>(null);
-	const [status, setStatus] = useState<string>(t.all);
-	const [type, setType] = useState<string>(t.all);
+	const hasFilters =
+		!!applied.start_date ||
+		!!applied.end_date ||
+		!!applied.status ||
+		!!applied.type;
 
-	// Dropdown local
-	const [showStatusDd, setShowStatusDd] = useState(false);
-	const [showTypeDd, setShowTypeDd] = useState(false);
-	const statusOptions = useMemo(() => [t.all, t.pending, t.successful, t.failed], [t]);
-	const typeOptions = useMemo(() => [t.all, t.debit, t.credit], [t]);
-
-	// Refs for dropdown containers (avoid any-casts)
-	const statusDdRef = useRef<View>(null);
-	const typeDdRef = useRef<View>(null);
-
-	// When language changes, reset default selections to "All"
-	useEffect(() => {
-		setStatus(t.all);
-		setType(t.all);
-	}, [t.all]);
-
-	// Pagination
-	const [page, setPage] = useState(1);
-	const pageSize = 10;
-
-	// Auto-fetch purchases on an interval when the list is empty.
-	// Rate-limited to at most 2 calls per minute (every 30s).
-	// Manual refresh (pull-to-refresh) bypasses this limit.
-	// Respects any active filters so filtered views stay up-to-date.
-	const autoFetchIntervalMs = 30_000;
-	const lastAutoFetchRef = useRef(0);
-
-	useEffect(() => {
-		if (!user) return;
-
-		const intervalId = setInterval(() => {
-			const now = Date.now();
-			if (now - lastAutoFetchRef.current < autoFetchIntervalMs) return;
-
-			lastAutoFetchRef.current = now;
-			fetchPurchases(activeFiltersRef.current).catch(() => {});
-		}, autoFetchIntervalMs);
-
-		// Run once immediately on mount (or when user becomes available)
-		if (purchases.length === 0) {
-			lastAutoFetchRef.current = Date.now();
-			fetchPurchases(activeFiltersRef.current).catch(() => {});
+	const filtersForRequest = useCallback((): TransactionFilters | null => {
+		const start = toApiDate(startDate);
+		const end = toApiDate(endDate);
+		// The API only applies the date filter when both ends are present.
+		if ((start && !end) || (!start && end)) {
+			ShowAlert(t.dateRangeRequired, 'Error');
+			return null;
 		}
 
-		return () => clearInterval(intervalId);
-		// fetchPurchases & purchases are intentionally excluded to avoid
-		// re-triggering the interval on every state change.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user]);
-
-	// Pagination — server handles filtering, so paginate purchases directly
-	const totalPages = Math.max(1, Math.ceil(purchases.length / pageSize));
-	const paged = useMemo(() => {
-		const start = (page - 1) * pageSize;
-		return purchases.slice(start, start + pageSize);
-	}, [purchases, page]);
-
-	// Button handlers
-	const handleApplyFilters = useCallback(async () => {
-		// Build filter payload – only include non-"All" values so the server
-		// returns everything when no specific filter is selected.
 		const filters: TransactionFilters = {};
+		if (start && end) {
+			filters.start_date = start;
+			filters.end_date = end;
+		}
+		if (statusLabel && statusLabel !== t.all) {
+			filters.status = statusLabel.toLowerCase();
+		}
+		if (typeLabel && typeLabel !== t.all) {
+			filters.type = typeLabel.toLowerCase();
+		}
+		return filters;
+	}, [endDate, startDate, statusLabel, t.all, t.dateRangeRequired, typeLabel]);
 
-		if (startDate) {
-			// Format as YYYY-MM-DD
-			const y = startDate.getFullYear();
-			const m = String(startDate.getMonth() + 1).padStart(2, '0');
-			const d = String(startDate.getDate()).padStart(2, '0');
-			filters.start_date = `${y}-${m}-${d}`;
-		}
-		if (endDate) {
-			const y = endDate.getFullYear();
-			const m = String(endDate.getMonth() + 1).padStart(2, '0');
-			const d = String(endDate.getDate()).padStart(2, '0');
-			filters.end_date = `${y}-${m}-${d}`;
-		}
-		if (status && status.toLowerCase() !== t.all.toLowerCase()) {
-			filters.status = status.toLowerCase();
-		}
-		if (type && type.toLowerCase() !== t.all.toLowerCase()) {
-			filters.type = type.toLowerCase();
-		}
-
-		// Persist for auto-fetch
-		activeFiltersRef.current = Object.keys(filters).length > 0 ? filters : undefined;
-
-		setFilterLoading(true);
+	const applyFilters = useCallback(() => {
+		const filters = filtersForRequest();
+		if (!filters) return;
+		setApplied(filters);
 		setPage(1);
-		try {
-			await fetchPurchases(filters);
-		} catch (e) {
-			console.error('[TransactionsScreen] applyFilters failed', e);
-		} finally {
-			setFilterLoading(false);
-		}
-	}, [startDate, endDate, status, type, t.all, fetchPurchases]);
+	}, [filtersForRequest]);
 
-	const handleExportExcel = useCallback(async () => {
-		try {
-			const params = new URLSearchParams();
-			if (startDate) {
-				const y = startDate.getFullYear();
-				const m = String(startDate.getMonth() + 1).padStart(2, '0');
-				const d = String(startDate.getDate()).padStart(2, '0');
-				params.append('start_date', `${y}-${m}-${d}`);
-			}
-			if (endDate) {
-				const y = endDate.getFullYear();
-				const m = String(endDate.getMonth() + 1).padStart(2, '0');
-				const d = String(endDate.getDate()).padStart(2, '0');
-				params.append('end_date', `${y}-${m}-${d}`);
-			}
-			if (type && type.toLowerCase() !== t.all.toLowerCase()) {
-				params.append('type', type.toLowerCase());
-			}
-			if (status && status.toLowerCase() !== t.all.toLowerCase()) {
-				params.append('status', status.toLowerCase());
-			}
-			const qs = params.toString();
-			const url = `${apiBaseUrl || ''}/transactions/export/excel${qs ? '?' + qs : ''}`;
+	const clearFilters = useCallback(() => {
+		setStartDate(null);
+		setEndDate(null);
+		setStatusLabel('');
+		setTypeLabel('');
+		setApplied({});
+		setPage(1);
+	}, []);
 
-			// Use a direct fetch with auth header to download the file
-			const headers: Record<string, string> = {};
-			if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-			const res = await fetch(url, { headers });
-			if (!res.ok) {
-				console.error('[TransactionsScreen] export Excel failed', res.status);
-				return;
-			}
-			const blob = await res.blob();
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (typeof reader.result === 'string') {
-					Linking.openURL(reader.result);
+	const exportLedger = useCallback(
+		async (format: 'excel' | 'pdf') => {
+			try {
+				const params = new URLSearchParams();
+				Object.entries(applied).forEach(([key, value]) => {
+					if (value === undefined || value === null || value === '') return;
+					params.append(key, String(value));
+				});
+				const qs = params.toString();
+				const url = `${apiBaseUrl || ''}/transactions/export/${format}${qs ? `?${qs}` : ''}`;
+
+				const headers: Record<string, string> = {};
+				if (authToken) headers.Authorization = `Bearer ${authToken}`;
+				const res = await fetch(url, { headers });
+				if (!res.ok) {
+					console.error('[TransactionsScreen] export failed', res.status);
+					return;
 				}
-			};
-			reader.onerror = () => {
-				console.error('[TransactionsScreen] FileReader error');
-			};
-			reader.readAsDataURL(blob);
-		} catch (e) {
-			console.error('[TransactionsScreen] export Excel failed', e);
-		}
-	}, [startDate, endDate, type, status, t.all, authToken]);
+				const blob = await res.blob();
+				const reader = new FileReader();
+				reader.onload = () => {
+					if (typeof reader.result === 'string') {
+						void Linking.openURL(reader.result);
+					}
+				};
+				reader.onerror = () => {
+					console.error('[TransactionsScreen] FileReader error');
+				};
+				reader.readAsDataURL(blob);
+			} catch (e) {
+				console.error('[TransactionsScreen] export failed', e);
+			}
+		},
+		[applied, authToken]
+	);
 
-	const handleExportPdf = useCallback(async () => {
-		try {
-			const params = new URLSearchParams();
-			if (startDate) {
-				const y = startDate.getFullYear();
-				const m = String(startDate.getMonth() + 1).padStart(2, '0');
-				const d = String(startDate.getDate()).padStart(2, '0');
-				params.append('start_date', `${y}-${m}-${d}`);
-			}
-			if (endDate) {
-				const y = endDate.getFullYear();
-				const m = String(endDate.getMonth() + 1).padStart(2, '0');
-				const d = String(endDate.getDate()).padStart(2, '0');
-				params.append('end_date', `${y}-${m}-${d}`);
-			}
-			if (type && type.toLowerCase() !== t.all.toLowerCase()) {
-				params.append('type', type.toLowerCase());
-			}
-			if (status && status.toLowerCase() !== t.all.toLowerCase()) {
-				params.append('status', status.toLowerCase());
-			}
-			const qs = params.toString();
-			const url = `${apiBaseUrl || ''}/transactions/export/pdf${qs ? '?' + qs : ''}`;
-
-			// Use a direct fetch with auth header to download the file
-			const headers: Record<string, string> = {};
-			if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-			const res = await fetch(url, { headers });
-			if (!res.ok) {
-				console.error('[TransactionsScreen] export PDF failed', res.status);
-				return;
-			}
-			const blob = await res.blob();
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (typeof reader.result === 'string') {
-					Linking.openURL(reader.result);
-				}
-			};
-			reader.onerror = () => {
-				console.error('[TransactionsScreen] FileReader error');
-			};
-			reader.readAsDataURL(blob);
-		} catch (e) {
-			console.error('[TransactionsScreen] export PDF failed', e);
-		}
-	}, [startDate, endDate, type, status, t.all, authToken]);
-
-	const handlePrevPage = () => {
-		setPage((p) => Math.max(1, p - 1));
+	// Like every other record list, each card leads with what the row *is*:
+	// the reason the money moved, falling back to the credit/debit direction.
+	const titleFor = (transaction: ApiTransaction) => {
+		if (transaction.reason) return transaction.reason;
+		if (transaction.type === 'debit') return t.debit;
+		if (transaction.type === 'credit') return t.credit;
+		return t.title;
 	};
 
-	const handleNextPage = () => {
-		setPage((p) => Math.min(totalPages, p + 1));
+	const badgeFor = (transaction: ApiTransaction): RecordBadge | undefined => {
+		const status = String(transaction.status ?? '');
+		if (!status) return undefined;
+		return {
+			label: status.replace(/_/g, ' '),
+			tone: STATUS_TONES[status] ?? 'warning',
+		};
 	};
 
-    return (
-        <ParallaxScrollView
-			headerBackgroundColor={{
-				light: backgroundLight,
-				dark: backgroundDark,
-			}}
-			refreshing={refreshing}
-			onRefresh={handleRefresh}
-			contentStyle={{ paddingHorizontal: 10 }}
+	const fieldsFor = (transaction: ApiTransaction): RecordField[] => {
+		const statusMessage = (
+			transaction.metadata as Record<string, unknown> | null | undefined
+		)?.status_message;
+
+		return [
+			{
+				label: t.colAmount,
+				value: formatAmount(Math.abs(Number(transaction.amount ?? 0)), 2),
+				tone: 'warning',
+			},
+			// The reason is the card title; only show the direction as a field when
+			// the title is not already the direction.
+			...(transaction.reason
+				? [{ label: t.colType, value: transaction.type || '—' }]
+				: []),
+			{
+				label: t.colRouterName,
+				value: transaction.router?.name || transaction.router_name || '—',
+			},
+			{ label: t.colTransactionDate, value: formatDateTime(transaction.created_at) },
+			{
+				label: t.colMessage,
+				value: typeof statusMessage === 'string' && statusMessage ? statusMessage : '—',
+				fullWidth: true,
+			},
+			...(isAdmin && transaction.gateway
+				? [{ label: t.gateway, value: transaction.gateway }]
+				: []),
+		];
+	};
+
+	return (
+		<ParallaxScrollView
+			headerBackgroundColor={{ light: backgroundLight, dark: backgroundDark }}
 			containerStyle={{ flex: 1 }}
+			contentStyle={{ paddingHorizontal: 10 }}
+			onRefresh={handleRefresh}
+			refreshing={refreshing}
 		>
-			{/* Title */}
-			<ThemedText
-				lightColor={bimLight}
-				darkColor={bimDark}
-				style={{
-					width: '100%',
-					textTransform: 'capitalize',
-					fontSize: fontSize['heading.one'],
-					fontWeight: fontWeight['heading.one'],
-					marginBottom: 12,
-				}}
-			>
-				{t.title}
-			</ThemedText>
-
-			{/* Filters Row */}
 			<TileContainer
-				id='transactions-filters'
+				id='transactions-header-tile'
+				flat
 				backgroundColor={background}
-				style={{
-					flexDirection: 'column',
-					gap: 12,
-					padding: 12,
-					marginBottom: 12,
-					// Ensure any nested dropdown overlays subsequent sections
-					...(showStatusDd || showTypeDd
-						? { zIndex: 2000, elevation: 20 }
-						: {}),
-				}}
+				style={styles.section}
 			>
-				<ThemedView
-					style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
-					{/* Start Date */}
-					<ThemedView
-						style={{ flexBasis: '48%', flexGrow: 1 }}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
+				<View style={styles.titleRow}>
+					<ThemedText
+						style={[styles.screenTitle, { color: textColor }]}
+						lightColor={textColor}
+						darkColor={textColor}
+						numberOfLines={1}
 					>
+						{t.title}
+					</ThemedText>
+					{loading ? <ActivityIndicator size='small' color={bim} /> : null}
+				</View>
+				<ThemedText
+					style={[styles.description, { color: mutedText }]}
+					lightColor={mutedText}
+					darkColor={mutedText}
+				>
+					{t.description}
+				</ThemedText>
+			</TileContainer>
+
+			<TileContainer
+				id='transactions-filters-tile'
+				flat
+				backgroundColor={background}
+				style={styles.section}
+			>
+				<View style={styles.dateRow}>
+					<View style={styles.dateField}>
 						<ThemedDatePicker
 							label={t.startDate}
 							placeholder={t.startDate}
 							value={startDate}
-							onChange={(d) => setStartDate(d)}
-							mode='date'
-							inputStyle={{ backgroundColor: background }}
+							onChange={setStartDate}
 						/>
-					</ThemedView>
-					{/* End Date */}
-					<ThemedView
-						style={{ flexBasis: '48%', flexGrow: 1 }}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
-					>
+					</View>
+					<View style={styles.dateField}>
 						<ThemedDatePicker
 							label={t.endDate}
 							placeholder={t.endDate}
 							value={endDate}
-							onChange={(d) => setEndDate(d)}
-							mode='date'
-							inputStyle={{ backgroundColor: background }}
+							onChange={setEndDate}
 						/>
-					</ThemedView>
+					</View>
+				</View>
 
-					{/* Status */}
-					<ThemedView
-						style={{ flexBasis: '48%', flexGrow: 1 }}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
-					>
-						<ThemedDropdown
-							id='status-dd'
-							containerRef={statusDdRef}
-							label={t.status}
-							placeholder={t.status}
-							options={statusOptions}
-							value={status}
-							setValue={(v) => setStatus(v)}
-							showDropdown={showStatusDd}
-							setShowDropdown={setShowStatusDd}
-							openDirection='down'
-						/>
-					</ThemedView>
+				<ThemedDropdown
+					id='transactions-status-filter'
+					containerRef={statusRef}
+					label={t.status}
+					placeholder={t.all}
+					options={statusOptions}
+					value={statusLabel || t.all}
+					setValue={(value) => setStatusLabel(value === t.all ? '' : String(value))}
+					showDropdown={openDropdown === 'status'}
+					setShowDropdown={(open) => setOpenDropdown(open ? 'status' : null)}
+					openDirection='down'
+				/>
 
-					{/* Transaction Type */}
-					<ThemedView
-						style={{ flexBasis: '48%', flexGrow: 1 }}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
-					>
-						<ThemedDropdown
-							id='type-dd'
-							containerRef={typeDdRef}
-							label={t.transactionType}
-							placeholder={t.transactionType}
-							options={typeOptions}
-							value={type}
-							setValue={(v) => setType(v)}
-							showDropdown={showTypeDd}
-							setShowDropdown={setShowTypeDd}
-							openDirection='down'
-						/>
-					</ThemedView>
-				</ThemedView>
+				<ThemedDropdown
+					id='transactions-type-filter'
+					containerRef={typeRef}
+					label={t.transactionType}
+					placeholder={t.all}
+					options={typeOptions}
+					value={typeLabel || t.all}
+					setValue={(value) => setTypeLabel(value === t.all ? '' : String(value))}
+					showDropdown={openDropdown === 'type'}
+					setShowDropdown={(open) => setOpenDropdown(open ? 'type' : null)}
+					openDirection='down'
+				/>
 
-				{/* Actions row */}
-				<ThemedView
-					style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
+				<View style={styles.actions}>
+					<ThemedButton
+						title={t.clear}
+						onPress={clearFilters}
+						disabled={
+							!hasFilters && !startDate && !endDate && !statusLabel && !typeLabel
+						}
+						numberOfLines={1}
+						style={styles.actionButton}
+						lightColor='transparent'
+						darkColor='transparent'
+						lightTextColor={bim}
+						darkTextColor={bim}
+						textStyle={styles.actionText}
+					/>
 					<ThemedButton
 						title={t.applyFilters}
-						onPress={handleApplyFilters}
-						loading={filterLoading}
-						style={{ backgroundColor: bim }}
-						lightTextColor={whiteLight}
-						darkTextColor={whiteDark}
+						icon='check'
+						onPress={applyFilters}
+						disabled={loading}
+						numberOfLines={1}
+						style={styles.actionButton}
+						lightColor={bim}
+						darkColor={bim}
+						lightTextColor={white}
+						darkTextColor={white}
+						iconColor={white}
+						textStyle={styles.actionText}
 					/>
-					<ThemedView
-						style={{ flex: 1 }}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
-					/>
-				</ThemedView>
+				</View>
 
-				{/* Total balance */}
-				<ThemedView
-					style={{
-						marginTop: 8,
-						flexDirection: 'row',
-						alignItems: 'center',
-						gap: 8,
-					}}
-					lightColor={backgroundLight}
-					darkColor={backgroundDark}
-				>
+				<View style={styles.totalRow}>
 					<ThemedText
-						lightColor={textLight}
-						darkColor={textDark}
-						style={{
-							fontWeight: fontWeight['heading.two'],
-							fontSize: fontSize['heading.two'],
-						}}
+						style={[styles.totalLabel, { color: mutedText }]}
+						lightColor={mutedText}
+						darkColor={mutedText}
 					>
-						{t.totalBalance}:
+						{t.totalBalance}
 					</ThemedText>
-					<ThemedView
-						style={{
-							backgroundColor: lime,
-							borderRadius: 6,
-							paddingHorizontal: 8,
-							paddingVertical: 4,
-						}}
-						lightColor={backgroundLight}
-						darkColor={backgroundDark}
-					>
+					<View style={[styles.totalPill, { backgroundColor: lime }]}>
 						<ThemedText
-							lightColor={whiteLight}
-							darkColor={whiteDark}
-							style={{
-								fontWeight: fontWeight['heading.two'],
-								fontSize: fontSize['heading.two'],
-							}}
+							style={styles.totalValue}
+							lightColor={white}
+							darkColor={white}
+							numberOfLines={1}
 						>
 							{formatAmount(totalAmount, 2)}
 						</ThemedText>
-					</ThemedView>
-				</ThemedView>
+					</View>
+				</View>
+
+				<View style={styles.actions}>
+					<ThemedButton
+						title={t.exportExcel}
+						icon='documents'
+						onPress={() => {
+							void exportLedger('excel');
+						}}
+						numberOfLines={1}
+						style={styles.actionButton}
+						lightColor={lime}
+						darkColor={lime}
+						lightTextColor={white}
+						darkTextColor={white}
+						iconColor={white}
+						textStyle={styles.actionText}
+					/>
+					<ThemedButton
+						title={t.exportPdf}
+						icon='printer'
+						onPress={() => {
+							void exportLedger('pdf');
+						}}
+						numberOfLines={1}
+						style={styles.actionButton}
+						lightColor={dangerButton}
+						darkColor={dangerButton}
+						lightTextColor={white}
+						darkTextColor={white}
+						iconColor={white}
+						textStyle={styles.actionText}
+					/>
+				</View>
 			</TileContainer>
 
-			{/* Export buttons section (no TileContainer) */}
-			<ThemedView
-				style={{
-					flexDirection: 'row',
-					gap: 12,
-					marginBottom: 12,
-					flexWrap: 'wrap',
-				}}
-				lightColor={backgroundLight}
-				darkColor={backgroundDark}
-			>
-				<ThemedButton
-					title={t.exportExcel}
-					onPress={handleExportExcel}
-					style={{ backgroundColor: lime }}
-					lightTextColor={whiteLight}
-					darkTextColor={whiteDark}
-				/>
-				<ThemedButton
-					title={t.exportPdf}
-					onPress={handleExportPdf}
-					style={{ backgroundColor: dangerButton }}
-					lightTextColor={whiteLight}
-					darkTextColor={whiteDark}
-				/>
-			</ThemedView>
 			<TileContainer
 				id='transactions-list-tile'
 				flat
 				backgroundColor={background}
-				style={{ flexDirection: 'column' }}
+				style={styles.section}
 			>
 				<RecordList
 					id='transactions-list'
-					isEmpty={paged.length === 0}
+					loading={loading && transactions.length === 0}
+					loadingMessage={loadingCopy}
+					isEmpty={!loading && transactions.length === 0}
 					emptyMessage={t.noTransactions}
 				>
-					{paged.map((trans, index) => {
-						const status = String(trans.status).toLowerCase();
-						return (
-							<RecordCard
-								key={`${trans.id}-${index}`}
-								id={`transaction-${trans.id}-${index}`}
-								fields={[
-									{
-										label: t.colStatus,
-										value: trans.status,
-										tone:
-											status === 'successful' || status === 'approved'
-												? 'success'
-												: status === 'pending'
-													? 'warning'
-													: status === 'failed'
-														? 'danger'
-														: 'info',
-									},
-									{
-										label: t.colRouterName,
-										value: trans.router?.name || trans.routerName || '—',
-									},
-									{
-										label: t.colAmount,
-										value: formatAmount(trans.amount, 2),
-										tone: 'default',
-									},
-									{ label: t.colType, value: trans.type },
-									{
-										label: t.colTransactionDate,
-										value: new Date(trans.created_at).toLocaleDateString(),
-									},
-									...(isAdmin && trans.gateway
-										? [{ label: t.gateway, value: trans.gateway }]
-										: []),
-								]}
-							/>
-						);
-					})}
+					{transactions.map((transaction, index) => (
+						<RecordCard
+							key={`${transaction.id}-${index}`}
+							id={`transaction-${transaction.id}-${index}`}
+							title={titleFor(transaction)}
+							badge={badgeFor(transaction)}
+							fields={fieldsFor(transaction)}
+						/>
+					))}
 				</RecordList>
-			</TileContainer>
 
-			<ThemedView
-				style={{
-					flexDirection: 'row',
-					gap: 12,
-					marginTop: 8,
-					alignItems: 'center',
-				}}
-				lightColor={backgroundLight}
-				darkColor={backgroundDark}
-			>
-				<ThemedButton
-					title={translations[language].categories.buttons.previous}
-					onPress={handlePrevPage}
-					disabled={page <= 1}
-					darkColor={backgroundDark}
-					lightColor={backgroundLight}
-					lightTextColor={page <= 1 ? mutedTextLight : undefined}
-					darkTextColor={page <= 1 ? mutedTextDark : undefined}
-					textStyle={{ fontSize: 14 }}
-				/>
-				<ThemedText lightColor={textLight} darkColor={textDark}>
-					{page} / {totalPages}
-				</ThemedText>
-				<ThemedButton
-					title={translations[language].categories.buttons.next}
-					onPress={handleNextPage}
-					disabled={page >= totalPages}
-					darkColor={backgroundDark}
-					lightColor={backgroundLight}
-					lightTextColor={page >= totalPages ? mutedTextLight : undefined}
-					darkTextColor={page >= totalPages ? mutedTextDark : undefined}
-					textStyle={{ fontSize: 14 }}
-				/>
-			</ThemedView>
+				{transactions.length > 0 ? (
+					<ListPagination
+						id='transactions-pagination'
+						page={page}
+						lastPage={lastPage}
+						onPrev={() => setPage((current) => Math.max(1, current - 1))}
+						onNext={() => setPage((current) => Math.min(lastPage, current + 1))}
+					/>
+				) : null}
+			</TileContainer>
 		</ParallaxScrollView>
 	);
 }
 
-// styles removed; layout handled by ParallaxScrollView props
+const styles = StyleSheet.create({
+	section: {
+		width: '100%',
+		gap: 10,
+	},
+	titleRow: {
+		width: '100%',
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+	},
+	screenTitle: {
+		flex: 1,
+		minWidth: 0,
+		fontSize: fontSize['heading.two'],
+		fontWeight: fontWeight['heading.two'],
+	},
+	description: {
+		fontSize: fontSize['text.medium'],
+		lineHeight: 19,
+	},
+	dateRow: {
+		flexDirection: 'row',
+		gap: 10,
+	},
+	dateField: {
+		flex: 1,
+		minWidth: 0,
+	},
+	actions: {
+		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		alignItems: 'center',
+		gap: 10,
+	},
+	actionButton: {
+		flex: 1,
+		minWidth: 0,
+	},
+	actionText: {
+		fontSize: fontSize['button.small'],
+		fontWeight: fontWeight['button.small'],
+	},
+	totalRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+	},
+	totalLabel: {
+		fontSize: fontSize['text.medium'],
+	},
+	totalPill: {
+		borderRadius: 6,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+	},
+	totalValue: {
+		fontSize: fontSize['button.small'],
+		fontWeight: fontWeight['button.small'],
+	},
+});

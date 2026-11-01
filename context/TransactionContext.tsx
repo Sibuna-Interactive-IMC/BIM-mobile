@@ -240,9 +240,11 @@ export const TransactionProvider = ({
 				const res = await UserService.fetchPurchases(authToken, filters);
 				if (res && res.ok) {
 					const body: GetTransactionsResponse = await res.json();
-					// API 2.0: `{ data: { transactions: { data: [...] }, total_amount } }`
+					// API 2.0 puts this page's rows straight at `transactions`;
+					// older deployments nested a Laravel paginator under it.
 					const data = getApiData<NonNullable<GetTransactionsResponse['data']>>(body);
-					const txData = data?.transactions?.data;
+					const rows = data?.transactions;
+					const txData = Array.isArray(rows) ? rows : rows?.data;
 					if (Array.isArray(txData))
 						setPurchases(txData.map(mapApiTransactionToMicroTransaction));
 					// Capture server-computed total_amount (respects active filters)

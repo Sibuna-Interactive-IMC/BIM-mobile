@@ -958,6 +958,7 @@ const translations: Translations = {
 			},
 			transactions: {
 				title: 'Transactions',
+				description: 'Every credit and debit on the routers you can access.',
 				startDate: 'Start date',
 				endDate: 'End date',
 				status: 'Status',
@@ -978,10 +979,13 @@ const translations: Translations = {
 				colType: 'Type',
 				colReason: 'Reason',
 				colStatus: 'Status',
-				colRouterName: 'Router Name',
-				colTransactionDate: 'Transaction Date',
+				colRouterName: 'Router name',
+				colMessage: 'Message',
+				colTransactionDate: 'Transaction date',
 				gateway: 'Gateway',
 				noTransactions: 'No transactions found for these filters.',
+				clear: 'Clear',
+				dateRangeRequired: 'Pick both dates to filter by date.',
 			},
 			withdraw: {
 				title: 'Withdraw',

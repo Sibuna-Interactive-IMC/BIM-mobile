@@ -58,4 +58,28 @@ describe('UserService', () => {
 		expect(docsUrl).toBe('https://api.example/documents');
 		expect(docsInit.headers.Authorization).toBe('Bearer t2');
 	});
+
+	test('fetchPurchases serialises filters and paging', async () => {
+		await UserService.fetchPurchases('t1', {
+			start_date: '2026-10-01',
+			end_date: '2026-10-31',
+			status: 'successful',
+			type: 'credit',
+			page: 3,
+			per_page: 20,
+		});
+
+		const call = (mockApiFetch.mock.calls[0] as any[]) || [];
+		expect(call[0]).toBe(
+			'https://api.example/transactions?start_date=2026-10-01&end_date=2026-10-31&status=successful&type=credit&page=3&per_page=20'
+		);
+		expect((call[1] as any).method).toBe('GET');
+	});
+
+	test('fetchPurchases skips empty filter values', async () => {
+		await UserService.fetchPurchases('t1', { status: '', type: 'credit' });
+
+		const call = (mockApiFetch.mock.calls[0] as any[]) || [];
+		expect(call[0]).toBe('https://api.example/transactions?type=credit');
+	});
 });

@@ -73,8 +73,17 @@ Icons are restricted to `IconSymbolName` — the keys of `MAPPING` in
 
 ## Data and API
 
-- `backend-api.json` is the contract. Add request/response types to
-  `types/index.ts` and put matching calls in `services/`.
+- `backend-api.json` is the contract, but the Laravel handlers win when they
+  disagree. `ApiResponse::paginated()` (used by `/sites`, `/transactions`,
+  `/disbursement-records`, …) returns `{ success, message, <key>: [...rows],
+  <key>_metadata: { current_page, last_page, total, … } }` with **no** `data`
+  wrapper, even where the spec shows a nested paginator.
+- Read payloads with `getApiData(body)` and paging with
+  `getApiPagination(body, key)` / `getPageInfo(body, key)` from
+  `helpers/apiResponse.ts`; they accept the top-level, `data`-nested and legacy
+  `*_meta` / `*_metadata` shapes. Never hand-roll `body.data.x.data`.
+- Add request/response types to `types/index.ts` and put matching calls in
+  `services/`.
 - Follow the server's verb choices literally (some "updates" are `POST`, e.g.
   `POST /sites/{router}/access-points/{apId}`).
 - Gate destructive or role-specific UI with the helpers in

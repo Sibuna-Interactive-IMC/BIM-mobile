@@ -1560,10 +1560,19 @@ export interface PaginatedCollection<T> {
 	total?: number;
 }
 
-/** `GET /transactions` */
+/**
+ * `GET /transactions`
+ *
+ * `ApiResponse::paginated()` puts this page's rows at `transactions` and the
+ * paging numbers in `transactions_metadata`, both at the top level of the
+ * envelope. Older deployments nested a Laravel paginator instead, so both are
+ * accepted by the readers.
+ */
 export type GetTransactionsResponse = ApiEnvelope<{
-	transactions: PaginatedCollection<ApiTransaction>;
-	total_amount: number;
+	transactions: ApiTransaction[] | PaginatedCollection<ApiTransaction>;
+	transactions_metadata?: PaginationMeta;
+	total_amount?: number;
+	charge_map?: Record<string, number>;
 }>;
 
 /** `GET /connector` */

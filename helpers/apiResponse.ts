@@ -96,15 +96,19 @@ export function getApiPagination(
 	}
 
 	// Older router payloads carried `cookies_meta` / `users_meta` / `hosts_meta`
-	// / `leases_meta` / `active_meta` next to the collection.
-	const data = asRecord(record?.data);
-	if (!data) return undefined;
+	// / `leases_meta` / `active_meta` next to the collection. The API 2.0
+	// `ApiResponse::paginated()` helper uses the longer `<key>_metadata` suffix
+	// and puts both at the top level of the envelope (next to success/message),
+	// so read the payload with `getApiData` and accept both suffixes.
+	const payload = getApiData<Record<string, unknown>>(body);
+	if (!payload) return undefined;
 	if (key) {
-		const named = asRecord(data[`${key}_meta`]);
+		const named =
+			asRecord(payload[`${key}_metadata`]) ?? asRecord(payload[`${key}_meta`]);
 		if (isPaginationBlock(named)) return named;
 	}
-	for (const [entryKey, value] of Object.entries(data)) {
-		if (!entryKey.endsWith('_meta')) continue;
+	for (const [entryKey, value] of Object.entries(payload)) {
+		if (!entryKey.endsWith('_meta') && !entryKey.endsWith('_metadata')) continue;
 		const legacyMeta = asRecord(value);
 		if (isPaginationBlock(legacyMeta)) return legacyMeta;
 	}

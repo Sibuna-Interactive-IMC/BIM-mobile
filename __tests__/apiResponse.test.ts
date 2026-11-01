@@ -191,6 +191,33 @@ describe('apiResponse helpers', () => {
 			total: 12,
 		});
 	});
+
+	test('reads the API 2.0 `<key>_metadata` block at the top level', () => {
+		// What ApiResponse::paginated() actually returns for GET /transactions:
+		// rows and `<key>_metadata` sit next to success/message, with no `data`.
+		const payload = {
+			success: true,
+			message: 'Transactions retrieved successfully',
+			transactions: [{ id: 'tx-1' }, { id: 'tx-2' }],
+			transactions_metadata: {
+				current_page: 2,
+				per_page: 20,
+				total: 42,
+				last_page: 3,
+				first_item: 21,
+				last_item: 40,
+			},
+			charge_map: {},
+			total_amount: 1500,
+		};
+
+		expect(getApiData<any>(payload)?.transactions).toHaveLength(2);
+		expect(getPageInfo(payload, 'transactions')).toMatchObject({
+			current_page: 2,
+			last_page: 3,
+			total: 42,
+		});
+	});
 });
 
 describe('api mappers', () => {

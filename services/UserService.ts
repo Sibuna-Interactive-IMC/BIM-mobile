@@ -15,6 +15,9 @@ export interface TransactionFilters {
 	status?: string;
 	type?: string;
 	router_id?: string;
+	/** Server-side paging (`/transactions` returns a Laravel paginator). */
+	page?: number;
+	per_page?: number;
 }
 
 export async function fetchDashboard(token?: string) {
