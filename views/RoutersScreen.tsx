@@ -244,7 +244,7 @@ export default function RoutersScreen() {
 										{
 											label: translations[language].categories.packages.view,
 											icon: 'eye.outline',
-											tone: 'success',
+											tone: 'primary',
 											onPress: () => handleViewRouter(router),
 										},
 										{

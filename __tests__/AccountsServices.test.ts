@@ -36,6 +36,64 @@ describe('account area services', () => {
 		expect(call[1].method).toBe('GET');
 	});
 
+	test('site management writes stay on the router-scoped endpoints', async () => {
+		await SiteService.saveSiteDetail('router-1', { landlord: 'A', notes: 'B' }, 'token');
+		await SiteService.createAccessPoint('router-1', { name: 'AP 1' }, 'token');
+		await SiteService.updateAccessPoint('router-1', 7, { name: 'AP 1b' }, 'token');
+		await SiteService.deleteAccessPoint('router-1', 7, 'token');
+
+		const calls = mockApiFetch.mock.calls as any[];
+		expect(calls.map((call) => [call[0], call[1].method])).toEqual([
+			['https://api.example/sites/router-1/detail', 'POST'],
+			['https://api.example/sites/router-1/access-points', 'POST'],
+			['https://api.example/sites/router-1/access-points/7', 'POST'],
+			['https://api.example/sites/router-1/access-points/7', 'DELETE'],
+		]);
+		expect(calls[0][1].body).toBe(
+			JSON.stringify({ landlord: 'A', notes: 'B' })
+		);
+		expect(calls[1][1].body).toBe(JSON.stringify({ name: 'AP 1' }));
+	});
+
+	test('site expenses post, relink compensation and delete', async () => {
+		await SiteService.createSiteExpense(
+			'router-1',
+			{ category: 'rent', amount: 1000, incurred_on: '2026-10-01' },
+			'token'
+		);
+		await SiteService.updateExpenseCompensation(
+			'router-1',
+			3,
+			{ compensation_type: 'voucher', voucher_user_id: 9 },
+			'token'
+		);
+		await SiteService.deleteSiteExpense('router-1', 3, 'token');
+
+		const calls = mockApiFetch.mock.calls as any[];
+		expect(calls.map((call) => [call[0], call[1].method])).toEqual([
+			['https://api.example/sites/router-1/expenses', 'POST'],
+			['https://api.example/sites/router-1/expenses/3/compensation', 'POST'],
+			['https://api.example/sites/router-1/expenses/3', 'DELETE'],
+		]);
+		expect(JSON.parse(calls[0][1].body)).toEqual({
+			category: 'rent',
+			amount: 1000,
+			incurred_on: '2026-10-01',
+		});
+	});
+
+	test('site disbursement options page by offset and limit', async () => {
+		await SiteService.fetchSiteDisbursements('router-1', 'token', {
+			offset: 5,
+			limit: 5,
+		});
+		const call = lastCall();
+		expect(call[0]).toBe(
+			'https://api.example/sites/router-1/disbursements?offset=5&limit=5'
+		);
+		expect(call[1].method).toBe('GET');
+	});
+
 	test('analytics accounts stay on the admin analytics prefix', async () => {
 		await AnalyticsService.fetchAnalyticsAccounts('token', { perPage: 1 });
 		await AnalyticsService.fetchAnalyticsAccount(2, 'token');
@@ -214,6 +272,26 @@ describe('accounts area services', () => {
 		expect(call[0]).toBe(
 			'https://api.example/disbursement-records?router=router-1&has_narration=yes&page=3&per_page=20'
 		);
+	});
+
+	test('disbursement documents hang off the record', async () => {
+		const form = new FormData();
+		await AccountsService.fetchDisbursementDocuments('record-1', 'token');
+		await AccountsService.uploadDisbursementDocument('record-1', form, 'token');
+		await AccountsService.downloadDisbursementDocument('record-1', 9, 'token');
+		await AccountsService.deleteDisbursementDocument('record-1', 9, 'token');
+
+		const calls = mockApiFetch.mock.calls as any[];
+		expect(calls.map((call) => [call[0], call[1].method])).toEqual([
+			['https://api.example/disbursement-records/record-1/documents', 'GET'],
+			['https://api.example/disbursement-records/record-1/documents', 'POST'],
+			['https://api.example/disbursement-records/record-1/documents/9', 'GET'],
+			['https://api.example/disbursement-records/record-1/documents/9', 'DELETE'],
+		]);
+		// The runtime has to add the multipart boundary itself.
+		expect(calls[1][1].headers['Content-Type']).toBeUndefined();
+		expect(calls[1][1].headers.Authorization).toContain('Bearer');
+		expect(calls[1][1].body).toBe(form);
 	});
 
 	test('business and profit analytics target the analytics prefix', async () => {

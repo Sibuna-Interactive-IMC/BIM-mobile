@@ -17,9 +17,15 @@ rows never scroll horizontally on a phone.
     fields, so a row with an action button never needs a horizontal scroll).
     Cards that are pure data — e.g. transactions — omit `title`/`subtitle` and
     carry every value (including the site/router name) as a `field`. Action `tone`
-    keeps the app's colour coding:
-    `success` (lime) for view, `warning` (yellow) for edit, `danger` (red) for
-    delete/block, `primary`/`info`/`neutral` for everything else.
+    keeps the app's colour coding: `primary` (the brand `bim` colour) for
+    view/open and for single-action cards, `warning` (yellow) for edit, `danger`
+    (red) for delete/block, `success` (lime) for approve/confirm,
+    `info`/`neutral` for everything else.
+  - Every action button pairs an **icon with its label** — text-only actions are
+    not allowed, the icon is what signals a tile is interactive. `view` uses
+    `eye.outline`, `edit` uses `edit.outline`, `delete` uses `delete.outline`,
+    create uses `plus`, and `view` keeps the brand `bim` colour through
+    `tone: 'primary'`. The full table lives in [AGENTS.md](./AGENTS.md#recordcard-actions--always-icon--label).
 - Every list sits on one elevated container: wrap `RecordList` in a
   `TileContainer`, unless the list already lives inside one (e.g. the dashboard
   transactions and the router-details tab panels).

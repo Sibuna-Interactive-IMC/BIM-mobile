@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { IconSymbol } from './ui/IconSymbol';
 
-type AcceptKind = 'pdf' | 'png' | 'jpg';
+type AcceptKind = 'pdf' | 'png' | 'jpg' | 'doc' | 'docx' | 'xls' | 'xlsx';
 
 export type ThemedFilePickerProps = {
 	label?: string;
@@ -67,6 +67,10 @@ export default function ThemedFilePicker({
 			pdf: 'application/pdf',
 			png: 'image/png',
 			jpg: 'image/jpeg',
+			doc: 'application/msword',
+			docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			xls: 'application/vnd.ms-excel',
+			xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 		};
 		return accept.map((k) => map[k]);
 	}, [accept]);

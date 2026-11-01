@@ -818,6 +818,74 @@ export type GetSiteResponse = ApiEnvelope<{
 	filters?: { month?: string; available_months?: string[] };
 }>;
 
+/** Expense categories accepted by `POST /sites/{router}/expenses`. */
+export type SiteExpenseCategory =
+	| 'rent'
+	| 'electricity'
+	| 'maintenance'
+	| 'equipment'
+	| 'other';
+
+/** `POST /sites/{router}/access-points` — `name` is the only required field. */
+export interface SiteAccessPointPayload {
+	name: string;
+	model?: string | null;
+	mac_address?: string | null;
+	physical_location?: string | null;
+	installed_on?: string | null;
+	notes?: string | null;
+}
+
+/** How an expense was settled; `null`/absent clears both links. */
+export interface SiteCompensationPayload {
+	compensation_type?: 'cash' | 'voucher' | null;
+	disbursement_record_id?: string | null;
+	voucher_user_id?: number | null;
+}
+
+/** `POST /sites/{router}/expenses` */
+export interface SiteExpensePayload extends SiteCompensationPayload {
+	category: SiteExpenseCategory;
+	amount: number;
+	description?: string | null;
+	currency?: string | null;
+	incurred_on?: string | null;
+	notes?: string | null;
+	access_point_id?: number | null;
+}
+
+/** One option in the compensation disbursement picker. */
+export interface SiteDisbursementOption {
+	id: string;
+	label: string;
+}
+
+/** `GET /sites/{router}/disbursements` */
+export type GetSiteDisbursementsResponse = ApiEnvelope<{
+	disbursements?: SiteDisbursementOption[];
+	disbursements_metadata?: {
+		offset?: number;
+		limit?: number;
+		total?: number;
+		has_more?: boolean;
+	};
+}>;
+
+/** `POST /sites/{router}/detail` */
+export type SaveSiteDetailResponse = ApiEnvelope<{
+	site_detail?: SitePremises | null;
+}>;
+
+/** `PUT /routers/{id}` — the router profile edited from the site screen. */
+export interface RouterPayload {
+	name: string;
+	location: string;
+	type: string;
+	ip_address: string;
+	router_user: string;
+	router_password?: string;
+}
+
 /** The member seen most recently in an account. */
 export interface AnalyticsAccountLastActive {
 	user_id?: number;
@@ -1079,11 +1147,41 @@ export type GetWithdrawalApprovalsResponse = ApiEnvelope<{
 /** A document attached to a disbursement record. */
 export interface DisbursementDocument {
 	id?: number | string;
+	/** Category label from the API ("Receipt"), or the raw key. */
 	type?: string;
 	type_label?: string;
+	file_name?: string;
+	/** Legacy alias kept for older payloads. */
 	name?: string;
+	mime_type?: string;
+	/** Human-readable, e.g. `184.2 KB`. */
+	size?: string;
 	url?: string | null;
+	is_image?: boolean;
+	is_pdf?: boolean;
 	created_at?: string | null;
+}
+
+/** Document categories accepted by `POST /disbursement-records/{record}/documents`. */
+export type DisbursementDocumentType = 'receipt' | 'invoice' | 'screenshot';
+
+/**
+ * The documents endpoint answers with the list at the top level while the
+ * documented shape nests it under `data` — accept both.
+ */
+export interface DisbursementDocumentsPayload {
+	success?: boolean;
+	message?: string;
+	documents?: DisbursementDocument[];
+	data?: { documents?: DisbursementDocument[] };
+}
+
+/** `POST /disbursement-records/{record}/documents` */
+export interface UploadedDisbursementDocumentPayload {
+	success?: boolean;
+	message?: string;
+	document?: DisbursementDocument;
+	data?: { document?: DisbursementDocument };
 }
 
 /** One disbursement record (`GET /disbursement-records`). */

@@ -106,6 +106,62 @@ export async function fetchDisbursementRecords(
 	});
 }
 
+/** `GET /disbursement-records/{record}/documents` */
+export async function fetchDisbursementDocuments(
+	recordId: string,
+	token?: string
+) {
+	return apiFetch(
+		`${apiBaseUrl || ''}/disbursement-records/${encodeURIComponent(recordId)}/documents`,
+		{ method: 'GET', headers: buildHeaders(token) }
+	);
+}
+
+/** `POST /disbursement-records/{record}/documents` — multipart upload. */
+export async function uploadDisbursementDocument(
+	recordId: string,
+	form: FormData,
+	token?: string
+) {
+	const headers: Record<string, string> = { Accept: 'application/json' };
+	if (token) headers.Authorization = `Bearer ${token}`;
+	// No Content-Type: the runtime must add the multipart boundary itself.
+	return apiFetch(
+		`${apiBaseUrl || ''}/disbursement-records/${encodeURIComponent(recordId)}/documents`,
+		{ method: 'POST', headers, body: form }
+	);
+}
+
+/** `DELETE /disbursement-records/{record}/documents/{document}` */
+export async function deleteDisbursementDocument(
+	recordId: string,
+	documentId: number | string,
+	token?: string
+) {
+	return apiFetch(
+		`${apiBaseUrl || ''}/disbursement-records/${encodeURIComponent(recordId)}/documents/${documentId}`,
+		{ method: 'DELETE', headers: buildHeaders(token) }
+	);
+}
+
+/**
+ * `GET /disbursement-records/{record}/documents/{document}` — the file itself.
+ * The API requires the bearer token, so previews are fetched here and turned
+ * into a data URI instead of pointing an `<Image>` at `document.url`.
+ */
+export async function downloadDisbursementDocument(
+	recordId: string,
+	documentId: number | string,
+	token?: string
+) {
+	const headers: Record<string, string> = {};
+	if (token) headers.Authorization = `Bearer ${token}`;
+	return apiFetch(
+		`${apiBaseUrl || ''}/disbursement-records/${encodeURIComponent(recordId)}/documents/${documentId}`,
+		{ method: 'GET', headers }
+	);
+}
+
 /** `GET /analytics/business/summary` */
 export async function fetchBusinessSummary(token?: string) {
 	return apiFetch(`${apiBaseUrl || ''}/analytics/business/summary`, {
@@ -215,6 +271,10 @@ export default {
 	rejectWithdrawal,
 	retractWithdrawal,
 	fetchDisbursementRecords,
+	fetchDisbursementDocuments,
+	uploadDisbursementDocument,
+	deleteDisbursementDocument,
+	downloadDisbursementDocument,
 	fetchBusinessSummary,
 	fetchProfit,
 	requestProfitOtp,

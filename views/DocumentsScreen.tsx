@@ -252,7 +252,7 @@ export default function DocumentsScreen() {
 								{
 									label: translations[language].categories.packages.view,
 									icon: 'eye.outline',
-									tone: 'success',
+									tone: 'primary',
 									onPress: () => handlePreview(d),
 								},
 								{

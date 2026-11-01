@@ -87,6 +87,13 @@ export default function SitesScreen() {
 		},
 	];
 
+	const openSite = useCallback(
+		(siteId: string) => {
+			navigation.push(`/(authenticated)/sites/${siteId}` as Href);
+		},
+		[navigation]
+	);
+
 	return (
 		<ParallaxScrollView
 			headerBackgroundColor={{ light: backgroundLight, dark: backgroundDark }}
@@ -133,11 +140,15 @@ export default function SitesScreen() {
 							id={`site-${site.id}`}
 							title={site.name}
 							fields={fieldsFor(site)}
-							onPress={() =>
-								navigation.push(
-									`/(authenticated)/sites/${site.id}` as Href
-								)
-							}
+							onPress={() => openSite(site.id)}
+							actions={[
+								{
+									label: t.view,
+									icon: 'eye.outline',
+									tone: 'primary',
+									onPress: () => openSite(site.id),
+								},
+							]}
 						/>
 					))}
 				</RecordList>

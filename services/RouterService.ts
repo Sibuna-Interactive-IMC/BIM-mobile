@@ -1,6 +1,7 @@
 import { apiBaseUrl } from '@/constants/API';
 import { apiFetch, pollQueuedOperation } from '@/helpers/api';
 import { getOperationCacheKey } from '@/helpers/apiResponse';
+import type { RouterPayload } from '@/types';
 import EventSource from 'react-native-sse';
 
 function buildHeaders(token?: string) {
@@ -57,6 +58,19 @@ export async function getRouterById(routerId: string, token?: string) {
 	return apiFetch((apiBaseUrl || '') + `/routers/${encodeURIComponent(routerId)}`, {
 		method: 'GET',
 		headers: buildHeaders(token),
+	});
+}
+
+/** `PUT /routers/{id}` — the router profile edited from Site Management. */
+export async function updateRouter(
+	routerId: string,
+	payload: RouterPayload,
+	token?: string
+) {
+	return apiFetch((apiBaseUrl || '') + `/routers/${encodeURIComponent(routerId)}`, {
+		method: 'PUT',
+		headers: buildHeaders(token),
+		body: JSON.stringify(payload),
 	});
 }
 
@@ -206,6 +220,7 @@ export async function updateRouterPurchaseGuard({ routerId, token, value }: { ro
 export default {
 	fetchRouters,
 	getRouterById,
+	updateRouter,
 	getRouterStatus,
 	pingRouter,
 	getRouterHotspots,

@@ -154,7 +154,7 @@ export default function AccountsAnalyticsScreen() {
 									actions={[
 										{
 											label: t.view,
-											icon: 'eye.fill',
+											icon: 'eye.outline',
 											tone: 'primary',
 											onPress: () =>
 												navigation.push(

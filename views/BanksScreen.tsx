@@ -186,7 +186,7 @@ export default function BanksScreen() {
 								{
 									label: translations[language].categories.packages.view,
 									icon: 'eye.outline',
-									tone: 'success',
+									tone: 'primary',
 									onPress: () => handleView(b.id),
 								},
 								{

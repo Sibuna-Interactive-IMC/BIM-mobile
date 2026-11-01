@@ -218,7 +218,7 @@ export default function PackageRouterHotspotsScreen() {
 										label:
 											translations[language].categories.buttons.viewPackages,
 										icon: 'packages',
-										tone: 'success',
+										tone: 'primary',
 										onPress: () =>
 											router.push(
 												`/(authenticated)/routers/packages/${hotspot['.id']}`

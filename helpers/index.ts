@@ -257,6 +257,21 @@ export function formatDateTime(value?: string | null): string {
 	});
 }
 
+/** `YYYY-MM-DD` (the API's date format) → a local `Date`, or null when unset. */
+export function parseApiDate(value?: string | null): Date | null {
+	if (!value) return null;
+	const date = new Date(`${value}T00:00:00`);
+	return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** A `Date` → `YYYY-MM-DD`, or null when nothing was picked. */
+export function toApiDate(date?: Date | null): string | null {
+	if (!date) return null;
+	const month = `${date.getMonth() + 1}`.padStart(2, '0');
+	const day = `${date.getDate()}`.padStart(2, '0');
+	return `${date.getFullYear()}-${month}-${day}`;
+}
+
 /**
  * Convert a millisecond timestamp to a human-friendly relative time string.
  * Examples: "just now", "5 minutes ago", "2 hours ago", "3 days ago"

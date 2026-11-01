@@ -40,6 +40,8 @@ type Props = {
 	initial?: Partial<NetRouter> & Partial<Payload>;
 	onCancel: () => void;
 	onSubmit: (payload: Payload) => void;
+	/** Edit forms may keep the stored router password, so it is not required. */
+	passwordOptional?: boolean;
 	onBack?: () => void;
 	onEdit?: () => void;
 };
@@ -50,6 +52,7 @@ export default function RouterOverlay({
 	initial,
 	onCancel,
 	onSubmit,
+	passwordOptional = false,
 	onBack,
 	onEdit,
 }: Props) {
@@ -129,9 +132,9 @@ export default function RouterOverlay({
 			type.trim().length > 0 &&
 			ipOk &&
 			username.trim().length > 0 &&
-			password.trim().length > 0
+			(passwordOptional || password.trim().length > 0)
 		);
-	}, [isEditable, name, location, type, ipAddress, username, password]);
+	}, [isEditable, name, location, passwordOptional, type, ipAddress, username, password]);
 
 	const title = useMemo(() => {
 		return isPreview

@@ -249,7 +249,7 @@ export default function HotspotPackagesScreen() {
 									{
 										label: t.packages.view,
 										icon: 'eye.outline',
-										tone: 'success',
+										tone: 'primary',
 										onPress: () => handleView(p),
 									},
 									{
