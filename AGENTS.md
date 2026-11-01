@@ -28,6 +28,12 @@ stays visually and behaviourally consistent.
 Nested screens get a header back chevron from `useHeaderBack(parentPath)`;
 screens that sit directly under the Accounts hub use `useAccountsBack()`.
 
+Overlays render through `components/Portal.tsx`. Its `mount`/`update`/`unmount`
+must stay **synchronous** — they run from a child layout effect, so deferring
+them (a `setTimeout`, animation frame, etc.) makes the portal render the previous
+node for a macrotask. Any controlled input inside an overlay then flashes its
+old value and silently drops characters when typed into quickly.
+
 ## RecordCard actions — always icon + label
 
 Every action on a `RecordCard` must carry an icon. Text-only action buttons are

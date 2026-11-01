@@ -23,47 +23,27 @@ const PortalContext = React.createContext<PortalContextValue | null>(null);
 export function PortalProvider({ children }: { children: ReactNode }) {
 	const nextKeyRef = useRef(0);
 	const [entries, setEntries] = useState<PortalEntry[]>([]);
-	const aliveRef = useRef(true);
 
-	React.useEffect(() => {
-		return () => {
-			aliveRef.current = false;
-		};
+	// These run from a child's layout effect, i.e. after commit but before paint.
+	// They must stay synchronous: deferring them (e.g. setTimeout) leaves the
+	// portal rendering the previous node for a macrotask, so a controlled input
+	// inside an overlay flashes its stale value and drops characters when typed
+	// into quickly.
+	const mount = useCallback((node: ReactNode) => {
+		const key = ++nextKeyRef.current;
+		setEntries((prev) => [...prev, { key, node }]);
+		return key;
 	}, []);
 
-	const enqueue = useCallback(
-		(updater: (prev: PortalEntry[]) => PortalEntry[]) => {
-			// Defer to the next macrotask to avoid scheduling updates during insertion effects
-			setTimeout(() => {
-				if (!aliveRef.current) return;
-				setEntries((prev) => updater(prev));
-			}, 0);
-		},
-		[]
-	);
+	const update = useCallback((key: number, node: ReactNode) => {
+		setEntries((prev) =>
+			prev.map((entry) => (entry.key === key ? { ...entry, node } : entry))
+		);
+	}, []);
 
-	const mount = useCallback(
-		(node: ReactNode) => {
-			const key = ++nextKeyRef.current;
-			enqueue((prev) => [...prev, { key, node }]);
-			return key;
-		},
-		[enqueue]
-	);
-
-	const update = useCallback(
-		(key: number, node: ReactNode) => {
-			enqueue((prev) => prev.map((e) => (e.key === key ? { ...e, node } : e)));
-		},
-		[enqueue]
-	);
-
-	const unmount = useCallback(
-		(key: number) => {
-			enqueue((prev) => prev.filter((e) => e.key !== key));
-		},
-		[enqueue]
-	);
+	const unmount = useCallback((key: number) => {
+		setEntries((prev) => prev.filter((entry) => entry.key !== key));
+	}, []);
 
 	const value = useMemo(
 		() => ({ mount, update, unmount }),
