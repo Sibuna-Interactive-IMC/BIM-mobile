@@ -1,5 +1,6 @@
 import { apiBaseUrl } from '@/constants/API';
 import { apiFetch } from '@/helpers/api';
+import type { WithdrawalRequestPayload } from '@/types';
 
 function buildHeaders(token?: string) {
 	const headers: Record<string, string> = {
@@ -70,6 +71,25 @@ export async function retractWithdrawal(
 	return apiFetch(
 		`${apiBaseUrl || ''}/withdrawals/${encodeURIComponent(transactionId)}/retract`,
 		{ method: 'POST', headers: buildHeaders(token) }
+	);
+}
+
+/**
+ * `POST /withdrawals/{router}` — the two-step owner withdrawal. The first call
+ * sends `request_otp`; the second sends the `otp` plus its `reference`.
+ */
+export async function requestWithdrawal(
+	routerId: string,
+	payload: WithdrawalRequestPayload,
+	token?: string
+) {
+	return apiFetch(
+		`${apiBaseUrl || ''}/withdrawals/${encodeURIComponent(routerId)}`,
+		{
+			method: 'POST',
+			headers: buildHeaders(token),
+			body: JSON.stringify(payload),
+		}
 	);
 }
 
@@ -271,6 +291,7 @@ export default {
 	rejectWithdrawal,
 	retractWithdrawal,
 	fetchDisbursementRecords,
+	requestWithdrawal,
 	fetchDisbursementDocuments,
 	uploadDisbursementDocument,
 	deleteDisbursementDocument,

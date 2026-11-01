@@ -1144,6 +1144,48 @@ export type GetWithdrawalApprovalsResponse = ApiEnvelope<{
 	initiated?: ApiTransaction[];
 }>;
 
+/** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
+export interface WithdrawalRequestPayload {
+	amount: number;
+	phone: string;
+	narration?: string | null;
+	/** First call only: ask the gateway to text the OTP. */
+	request_otp?: boolean;
+	/** Re-send after a partial-payment notice so the plan is accepted. */
+	accept_partial?: boolean;
+	/** Second call only: the code the owner typed. */
+	otp?: string;
+	reference?: string | null;
+}
+
+/**
+ * The withdrawal endpoint answers at the top level for some branches and under
+ * `data` for others, so every field is optional and both shapes are read.
+ */
+export interface WithdrawalRequestResult {
+	success?: boolean;
+	message?: string;
+	otp_sent?: boolean;
+	reference?: string | null;
+	otp_phone?: string | null;
+	/** The router balances cannot cover the amount; nothing was sent yet. */
+	requires_partial_acceptance?: boolean;
+	total_covered?: number;
+	uncovered?: number;
+	advice?: string | null;
+	/** Set when the money went out through a cascade across sibling routers. */
+	cascade?: boolean;
+	/** Set when the payout is still being processed by the provider. */
+	processing?: boolean;
+	transaction?: ApiTransaction | null;
+	details?: unknown;
+}
+
+export interface WithdrawalRequestResponse extends WithdrawalRequestResult {
+	data?: WithdrawalRequestResult;
+	errors?: Record<string, string[]>;
+}
+
 /** A document attached to a disbursement record. */
 export interface DisbursementDocument {
 	id?: number | string;

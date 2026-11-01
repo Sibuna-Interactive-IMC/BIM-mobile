@@ -16,7 +16,7 @@ import { StyleSheet } from 'react-native';
 export default function WithdrawScreen() {
 	const bg = useThemeColor({}, 'background');
 	const { routers, fetchRouters } = useTransaction();
-	const { user, language } = useGeneral();
+	const { user, language, authToken } = useGeneral();
 
 	const [refreshing, setRefreshing] = useState(false);
 
@@ -66,16 +66,6 @@ export default function WithdrawScreen() {
 		setShowWithdraw(false);
 	};
 
-	const handleInitiateWithdraw = (payload: {
-		amount: string;
-		phone: string;
-		narration?: string;
-	}) => {
-		// TODO: integrate API call to initiate withdrawal
-		// For now, just close modal; leave navigation or toast for future step
-		setShowWithdraw(false);
-	};
-
 	return (
 		<ParallaxScrollView
 			headerBackgroundColor={{ light: bg, dark: bg }}
@@ -120,7 +110,7 @@ export default function WithdrawScreen() {
 								{
 									label: translations[language].categories.buttons.withdraw,
 									icon: 'withdrawal',
-									tone: 'success',
+									tone: 'primary',
 									onPress: () => handleWithdrawRouter(r.id),
 								},
 							]}
@@ -131,10 +121,15 @@ export default function WithdrawScreen() {
 			{selectedRouter && (
 				<WithdrawFunds
 					visible={showWithdraw}
+					routerId={selectedRouter.id}
 					routerName={selectedRouter.name}
 					currency={currency}
+					authToken={authToken ?? undefined}
+					balance={selectedRouter.balance}
 					onCancel={handleCancelWithdraw}
-					onInitiate={handleInitiateWithdraw}
+					onCompleted={() => {
+						void fetchRouters();
+					}}
 				/>
 			)}
 			</ThemedView>

@@ -41,7 +41,6 @@ function CustomDrawerContent(props: any) {
 				'packages',
 				'vouchers',
 				'accounts',
-				'withdraw',
 				'banks',
 				'connector',
 				'documents',
@@ -285,7 +284,6 @@ export default function DrawerLayout() {
 				<Drawer.Screen name='packages' />
 				<Drawer.Screen name='vouchers' />
 				<Drawer.Screen name='accounts' />
-				<Drawer.Screen name='withdraw' />
 				<Drawer.Screen name='banks' />
 				<Drawer.Screen name='connector' />
 				<Drawer.Screen name='documents' />

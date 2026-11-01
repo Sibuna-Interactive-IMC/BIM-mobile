@@ -294,6 +294,34 @@ describe('accounts area services', () => {
 		expect(calls[1][1].body).toBe(form);
 	});
 
+	test('withdrawal requests post to the router for both steps', async () => {
+		await AccountsService.requestWithdrawal(
+			'router-1',
+			{ amount: 15000, phone: '0751123456', request_otp: true },
+			'token'
+		);
+		await AccountsService.requestWithdrawal(
+			'router-1',
+			{ amount: 15000, phone: '0751123456', otp: '123456', reference: 'REF-1' },
+			'token'
+		);
+
+		const calls = mockApiFetch.mock.calls as any[];
+		expect(calls.map((call) => [call[0], call[1].method])).toEqual([
+			['https://api.example/withdrawals/router-1', 'POST'],
+			['https://api.example/withdrawals/router-1', 'POST'],
+		]);
+		expect(JSON.parse(calls[0][1].body)).toEqual({
+			amount: 15000,
+			phone: '0751123456',
+			request_otp: true,
+		});
+		expect(JSON.parse(calls[1][1].body)).toMatchObject({
+			otp: '123456',
+			reference: 'REF-1',
+		});
+	});
+
 	test('business and profit analytics target the analytics prefix', async () => {
 		await AccountsService.fetchBusinessSummary('token');
 		await AccountsService.fetchProfit('token', 2);
