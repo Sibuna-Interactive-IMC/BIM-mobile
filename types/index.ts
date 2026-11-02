@@ -1184,6 +1184,47 @@ export interface InviteUserPayload {
 	is_cosignatory?: boolean;
 }
 
+/** One gateway's circuit breaker (`GET /admin/payment-provider`). */
+export interface PaymentProviderHealth {
+	provider: string;
+	label: string;
+	role: 'primary' | 'secondary';
+	state: 'closed' | 'open';
+	open: boolean;
+	consecutive_failures: number;
+	/** Failover backoff in minutes; 0 while the circuit is closed. */
+	backoff_minutes: number;
+	last_failure_at?: string | null;
+	probe_due_at?: string | null;
+	last_success_at?: string | null;
+}
+
+/**
+ * Which gateway takes new collections right now.
+ * `forced` is null while the automatic failover decides.
+ */
+export interface PaymentProviderRouting {
+	mode: 'auto' | 'forced';
+	forced: string | null;
+	forced_since?: string | null;
+	/** The provider taking new collections right now. */
+	active: string;
+	active_label: string;
+	primary: string;
+	secondary: string;
+	/** True when the override points at the primary while its circuit is open. */
+	forcing_open_primary: boolean;
+	providers: Record<string, PaymentProviderHealth>;
+}
+
+/** `GET`/`PUT /admin/payment-provider` — the routing sits under `payment_provider`. */
+export type GetPaymentRoutingResponse = ApiEnvelope<{
+	payment_provider?: PaymentProviderRouting;
+}>;
+
+/** `PUT /admin/payment-provider` — a provider name, or `auto` to clear the override. */
+export type PaymentProviderChoice = string;
+
 /** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
 export interface WithdrawalRequestPayload {
 	amount: number;

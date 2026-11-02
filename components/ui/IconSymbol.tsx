@@ -91,6 +91,7 @@ const MAPPING: IconMapping = {
 	menu: { type: 'material-community', name: 'menu' },
 	account: { type: 'material-community', name: 'account-outline' },
 	cash: { type: 'material-community', name: 'cash-multiple' },
+	gateway: { type: 'material-community', name: 'credit-card-sync-outline' },
 	logout: { type: 'material-community', name: 'logout' },
 	withdrawal: { type: 'material-community', name: 'credit-card-outline' },
 	check: { type: 'material-community', name: 'check' },

@@ -8,6 +8,10 @@ rows never scroll horizontally on a phone.
 
 - **Tabs**: `components/SegmentedTabs.tsx` — pill tabs that scroll horizontally
   on their own, with an optional count per tab (`count`).
+- **Radio group**: `components/ThemedRadioButtons.tsx` — a single-choice list for
+  forms (`options: { key, label, description }`, `value`, `onChange`). Rows carry
+  a label plus a description of what the choice does, so it never looks like the
+  tab strip above: pills switch views, radios pick one value.
 - **Lists**: `components/RecordList.tsx`
   - `RecordList` renders the list shell with loading/empty states and an optional
     header action (`title`, `description`, `headerAction`, `loading`, `isEmpty`).

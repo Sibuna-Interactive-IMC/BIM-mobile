@@ -15,6 +15,7 @@ import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { SecurityProvider } from '@/context/SecurityContext';
 import { TransactionProvider } from '@/context/TransactionContext';
+import { isPlatformAdmin } from '@/helpers/permissions';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
 // use a runtime require to access DrawerContentScrollView to avoid missing type exports
@@ -27,9 +28,11 @@ function CustomDrawerContent(props: any) {
 	const drawerItem = useThemeColor({}, 'drawerItem');
 	const drawerInactiveItem = useThemeColor({}, 'drawerInactiveItem');
 
-	const { language } = useGeneral();
+	const { language, user } = useGeneral();
 	const { state, descriptors, navigation } = props;
 	const activeIndex = state.index;
+	// Payment routing is an admin tool, so its drawer link is admin-only.
+	const isAdmin = isPlatformAdmin(user);
 
 	// Allowlist of routes to show in the drawer. Only routes listed here will render.
 	// Edit this set to control which routes appear as links in the drawer.
@@ -42,11 +45,12 @@ function CustomDrawerContent(props: any) {
 				'vouchers',
 				'accounts',
 				'access',
+				...(isAdmin ? ['payment-gateway'] : []),
 				'banks',
 				'connector',
 				'documents',
 			]),
-		[]
+		[isAdmin]
 	);
 
 	return (
@@ -122,6 +126,9 @@ function CustomDrawerContent(props: any) {
 						break;
 					case 'access':
 						icon = <IconSymbol size={24} name='users' color={iconColor} />;
+						break;
+					case 'payment-gateway':
+						icon = <IconSymbol size={24} name='gateway' color={iconColor} />;
 						break;
 					case 'documents':
 						icon = <IconSymbol size={24} name='documents' color={iconColor} />;
@@ -289,6 +296,7 @@ export default function DrawerLayout() {
 				<Drawer.Screen name='vouchers' />
 				<Drawer.Screen name='accounts' />
 				<Drawer.Screen name='access' />
+				<Drawer.Screen name='payment-gateway' />
 				<Drawer.Screen name='banks' />
 				<Drawer.Screen name='connector' />
 				<Drawer.Screen name='documents' />

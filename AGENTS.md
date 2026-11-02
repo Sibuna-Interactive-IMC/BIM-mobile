@@ -22,6 +22,7 @@ stays visually and behaviourally consistent.
 | Section container | `TileContainer` (`flat` inside a screen) |
 | Record list | `RecordList` + `RecordCard` (`components/RecordList.tsx`) |
 | In-screen tabs | `SegmentedTabs` (`components/SegmentedTabs.tsx`) |
+| One value out of a few (form) | `ThemedRadioButtons` (`components/ThemedRadioButtons.tsx`) |
 | Modal / form | `OverlayContainer` (+ a per-form overlay in `views/`) |
 | Destructive confirm | `Prompt` (`components/Prompt.tsx`) |
 | Paging | `ListPagination` |
@@ -48,6 +49,17 @@ there are for sub-lists within a screen).
 
 Nested screens get a header back chevron from `useHeaderBack(parentPath)`;
 screens that sit directly under the Accounts hub use `useAccountsBack()`.
+Top-level drawer destinations (`home`, `access`, `banks`, …) call neither — the
+header keeps its drawer button. A new drawer link needs three entries in
+`app/(authenticated)/_layout.tsx`: the route in `allowedRoutes`, an icon in the
+`switch`, and a `<Drawer.Screen name='…' />`, plus a
+`categories.navigation['<route>']` label. Role-specific links are added to
+`allowedRoutes` conditionally (e.g. `payment-gateway` only when
+`isPlatformAdmin(user)`).
+
+`SegmentedTabs` switches *what a screen shows* (tab panels, filters); a
+single-value form field uses `ThemedRadioButtons`, whose rows carry a label and
+a description. Never render pills for a radio choice — they read as tabs.
 
 Overlays render through `components/Portal.tsx`. Its `mount`/`update`/`unmount`
 must stay **synchronous** — they run from a child layout effect, so deferring
@@ -105,6 +117,10 @@ Icons are restricted to `IconSymbolName` — the keys of `MAPPING` in
   `/disbursement-records`, …) returns `{ success, message, <key>: [...rows],
   <key>_metadata: { current_page, last_page, total, … } }` with **no** `data`
   wrapper, even where the spec shows a nested paginator.
+  `ApiResponse::success($message, $payload)` splices `$payload`'s keys at the
+  top level the same way, so a documented `data` object is usually read as
+  `getApiData(body)?.payment_provider` (e.g. `/admin/payment-provider`), not as
+  `body.data`.
 - Read payloads with `getApiData(body)` and paging with
   `getApiPagination(body, key)` / `getPageInfo(body, key)` from
   `helpers/apiResponse.ts`; they accept the top-level, `data`-nested and legacy
