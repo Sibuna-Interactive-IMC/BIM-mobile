@@ -12,6 +12,7 @@ import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { formatDateTime, translateWithVariables } from '@/helpers';
 import { getApiData, getApiPagination } from '@/helpers/apiResponse';
+import { isPlatformAdmin } from '@/helpers/permissions';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useHeaderBack from '@/hooks/useHeaderBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
@@ -50,9 +51,11 @@ export default function BroadcastDetailScreen() {
 	useHeaderBack('/(authenticated)/broadcasts');
 	const params = useLocalSearchParams<{ id?: string }>();
 	const broadcastId = Number(params.id);
-	const { language, authToken } = useGeneral();
+	const { language, authToken, user } = useGeneral();
 	const t = translations[language].categories.broadcast;
 	const loadingCopy = translations[language].categories.dashboard.loading;
+	// Broadcasts are an admin tool, so their per-recipient log is too.
+	const isAdmin = isPlatformAdmin(user);
 
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
@@ -95,7 +98,7 @@ export default function BroadcastDetailScreen() {
 
 	const load = useCallback(
 		async (nextPage: number, q: string, status: RecipientStatus | '') => {
-			if (!authToken || !Number.isFinite(broadcastId)) return;
+			if (!authToken || !isAdmin || !Number.isFinite(broadcastId)) return;
 			setLoading(true);
 			try {
 				const res = await fetchBroadcast(broadcastId, authToken, {
@@ -123,7 +126,7 @@ export default function BroadcastDetailScreen() {
 				setLoading(false);
 			}
 		},
-		[authToken, broadcastId]
+		[authToken, broadcastId, isAdmin]
 	);
 
 	useEffect(() => {
@@ -220,7 +223,7 @@ export default function BroadcastDetailScreen() {
 				<ScreenHeader
 					id='broadcast-detail-header'
 					title={translateWithVariables(t.broadcastLead, { id: broadcastId })}
-					description={broadcast?.status_label}
+					description={isAdmin ? broadcast?.status_label : t.adminOnly}
 					loading={loading}
 				/>
 			</TileContainer>

@@ -11,6 +11,7 @@ import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { formatAmount, formatDateTime, translateWithVariables } from '@/helpers';
 import { getApiData, getApiPagination } from '@/helpers/apiResponse';
+import { isPlatformAdmin } from '@/helpers/permissions';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useHeaderBack from '@/hooks/useHeaderBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
@@ -49,9 +50,11 @@ export default function AccountAnalyticsDetailScreen() {
 	useTrackHistory('/(authenticated)/accounts-analytics/[accountId]');
 	useHeaderBack('/(authenticated)/accounts-analytics');
 	const { accountId } = useLocalSearchParams<{ accountId: string }>();
-	const { language, authToken } = useGeneral();
+	const { language, authToken, user } = useGeneral();
 	const t = translations[language].categories.accountsAnalytics;
 	const loadingCopy = translations[language].categories.dashboard.loading;
+	// Admin-only, like the list this detail is opened from; the API enforces it too.
+	const isAdmin = isPlatformAdmin(user);
 
 	const background = useThemeColor({}, 'background');
 	const backgroundLight = useThemeColor({}, 'background', 'light');
@@ -78,7 +81,7 @@ export default function AccountAnalyticsDetailScreen() {
 	const numericId = Number(accountId);
 
 	const loadDetail = useCallback(async () => {
-		if (!authToken || !Number.isFinite(numericId)) return;
+		if (!authToken || !isAdmin || !Number.isFinite(numericId)) return;
 		setLoading(true);
 		try {
 			const res = await fetchAnalyticsAccount(numericId, authToken);
@@ -97,11 +100,11 @@ export default function AccountAnalyticsDetailScreen() {
 		} finally {
 			setLoading(false);
 		}
-	}, [authToken, numericId]);
+	}, [authToken, isAdmin, numericId]);
 
 	const loadVouchers = useCallback(
 		async (page: number) => {
-			if (!authToken || !Number.isFinite(numericId)) return;
+			if (!authToken || !isAdmin || !Number.isFinite(numericId)) return;
 			const res = await fetchAnalyticsAccountVouchers(numericId, authToken, page);
 			if (!res.ok) return;
 			const body: GetAnalyticsVouchersResponse = await res.json();
@@ -112,12 +115,12 @@ export default function AccountAnalyticsDetailScreen() {
 				Math.max(1, getApiPagination(body, 'vouchers')?.last_page ?? 1)
 			);
 		},
-		[authToken, numericId]
+		[authToken, isAdmin, numericId]
 	);
 
 	const loadWithdrawals = useCallback(
 		async (page: number) => {
-			if (!authToken || !Number.isFinite(numericId)) return;
+			if (!authToken || !isAdmin || !Number.isFinite(numericId)) return;
 			const res = await fetchAnalyticsAccountWithdrawals(numericId, authToken, page);
 			if (!res.ok) return;
 			const body: GetAnalyticsWithdrawalsResponse = await res.json();
@@ -129,7 +132,7 @@ export default function AccountAnalyticsDetailScreen() {
 				Math.max(1, getApiPagination(body, 'withdrawals')?.last_page ?? 1)
 			);
 		},
-		[authToken, numericId]
+		[authToken, isAdmin, numericId]
 	);
 
 	useEffect(() => {
@@ -298,6 +301,7 @@ export default function AccountAnalyticsDetailScreen() {
 				<ScreenHeader
 					id='account-detail-header'
 					title={account?.name || t.detailTitle}
+					description={isAdmin ? undefined : t.adminOnly}
 					loading={loading}
 				/>
 			</TileContainer>
@@ -308,11 +312,11 @@ export default function AccountAnalyticsDetailScreen() {
 				backgroundColor={background}
 				style={styles.section}
 			>
-				{account ? (
+				{account && isAdmin ? (
 					<SegmentedTabs tabs={tabs} activeKey={tab} onChange={(key) => setTab(key as TabKey)} />
 				) : null}
 
-				{!account && !loading ? (
+				{!account && !loading && isAdmin ? (
 					<ThemedText
 						style={[styles.description, { color: mutedText }]}
 						lightColor={mutedText}
