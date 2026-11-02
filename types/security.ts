@@ -43,6 +43,9 @@ export interface UserProfile {
     "email_verified_at"?: string | null;
     "created_at"?: string;
     "updated_at"?: string;
+    /** Set when an admin approved this login's KYC documents. */
+    "documents_verified"?: boolean;
+    "documents_verified_at"?: string | null;
 }
 
 /**

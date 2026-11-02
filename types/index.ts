@@ -1544,6 +1544,62 @@ export type SetDocumentsVerifiedResponse = ApiEnvelope<{
 	user?: DocumentOwner;
 }>;
 
+/** One preset avatar from `GET /profile/avatars`. */
+export interface AvatarPreset {
+	id: string;
+	gender: string;
+	tone: string;
+	beard: boolean;
+	label: string;
+	/** File name, e.g. `female-light.svg`. */
+	file: string;
+	/** Absolute URL of the shipped SVG. */
+	url: string;
+}
+
+/** The presets grouped by gender presentation, as the picker renders them. */
+export interface AvatarGroup {
+	gender: string;
+	label: string;
+	presets: AvatarPreset[];
+}
+
+/** A gender choice offered by the profile form; `''` means prefer not to say. */
+export interface GenderOption {
+	value: string;
+	label: string;
+}
+
+/** `GET /profile/avatars` */
+export interface GetAvatarOptionsResponse {
+	success?: boolean;
+	message?: string;
+	groups?: AvatarGroup[];
+	default?: AvatarPreset;
+	gender_options?: GenderOption[];
+	data?: {
+		groups?: AvatarGroup[];
+		default?: AvatarPreset;
+		gender_options?: GenderOption[];
+	};
+}
+
+/**
+ * `PATCH /profile` — only the fields that changed. The server treats phone,
+ * gender and avatar as `sometimes` so a partial update cannot blank them.
+ */
+export interface UpdateProfilePayload {
+	name: string;
+	email: string;
+	phone?: string;
+	gender?: string;
+	notification_email?: string;
+	avatar?: string;
+}
+
+/** The user just saved, as the API echoes it back. */
+export type ProfileMutationResponse = ApiEnvelope<{ user?: UserProfile }>;
+
 /** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
 export interface WithdrawalRequestPayload {
 	amount: number;
