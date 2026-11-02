@@ -1416,6 +1416,89 @@ export interface QueueBroadcastResponse {
 	data?: { broadcast?: Broadcast };
 }
 
+/** A router the console can act on — the whole fleet, not the caller's own. */
+export interface RouterToolTarget {
+	id: string;
+	name: string;
+}
+
+/** `POST /admin/router-console` — the router tools the mobile app offers. */
+export type RouterToolAction =
+	| 'send-command'
+	| 'push-portal'
+	| 'remove-duplicate-cookies'
+	| 'link-radius-users';
+
+/** `POST /admin/router-console/run` — `confirmed` must be the router's name when destructive. */
+export interface RunRouterActionPayload {
+	action: RouterToolAction;
+	scope: 'one' | 'all';
+	router_id?: string;
+	confirmed?: string;
+	command_text?: string;
+}
+
+/** `/system/identity/print` + `/system/resource/print` for one router. */
+export interface RouterIdentity {
+	ok: boolean;
+	/** True when the console ran out of read budget and never contacted the router. */
+	skipped?: boolean;
+	identity: Record<string, string>;
+	resource: Record<string, string>;
+	error?: string | null;
+}
+
+/** One row of `POST /admin/router-console/diagnose`. */
+export interface RouterIdentityRow {
+	router: { id: string; name: string };
+	identity: RouterIdentity;
+}
+
+/** `POST /admin/router-console/diagnose` */
+export interface DiagnoseRouterResponse {
+	success?: boolean;
+	message?: string;
+	routers?: RouterIdentityRow[];
+	routers_metadata?: PaginationMeta;
+	data?: {
+		routers?: RouterIdentityRow[];
+		routers_metadata?: PaginationMeta;
+	};
+}
+
+/** `POST /admin/router-console/preview` */
+export interface PreviewRouterActionResponse {
+	success?: boolean;
+	message?: string;
+	kind?: 'script' | 'command';
+	script?: string;
+	data?: { kind?: 'script' | 'command'; script?: string };
+}
+
+/**
+ * `POST /admin/router-console/run` — the queue acknowledgement, or the server's
+ * 422 with a per-field message.
+ */
+export interface RunRouterActionResponse {
+	success?: boolean;
+	message?: string;
+	errors?: Record<string, string[]>;
+	data?: { success?: boolean; message?: string; errors?: Record<string, string[]> };
+}
+
+/** `GET /admin/router-console/tasks/{task}` */
+export interface RouterTaskLogResponse {
+	success?: boolean;
+	message?: string;
+	router?: string;
+	status?: string;
+	queued?: string | null;
+	executed?: string | null;
+	command?: string;
+	reported?: boolean;
+	result?: string;
+}
+
 /** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
 export interface WithdrawalRequestPayload {
 	amount: number;

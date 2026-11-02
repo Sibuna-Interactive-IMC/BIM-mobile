@@ -152,6 +152,7 @@ const translations: Translations = {
 				access: 'Access',
 				'payment-gateway': 'Payment Gateway',
 				broadcasts: 'Broadcast',
+				'router-tools': 'Router Tools',
 				connector: 'Connector',
 				banks: 'Banks',
 				documents: 'Documents',
@@ -1236,6 +1237,67 @@ const translations: Translations = {
 				excludedCount: '{count} unchecked',
 				recipientDetail: 'Detail',
 				viewBroadcast: 'View broadcast',
+			},
+			routerTools: {
+				title: 'Router tools',
+				description:
+					'Act on any router in the system, whoever owns it, without opening its console: check reachability, push the portal files, send a command, or clean up.',
+				adminOnly: 'Only platform admins can use the router tools.',
+				router: 'Router',
+				chooseRouter: 'Choose a router',
+				routerRequired: 'Pick a router first.',
+				fleetHint:
+					'Every router in the system is listed here, not only the ones your account owns.',
+				identity: 'Connectivity & identity',
+				identityDesc:
+					'Reads the router’s identity and resources — the quickest way to tell “offline” from “wrong credentials”.',
+				identityAction: 'Check now',
+				identityChecking: 'Contacting the router…',
+				identityOk: 'Reachable',
+				identityFailed: 'No answer',
+				identitySkipped: 'Not checked',
+				identityName: 'Identity',
+				identityVersion: 'RouterOS',
+				identityBoard: 'Board',
+				identityUptime: 'Uptime',
+				identityCpu: 'CPU load',
+				identityMemory: 'Free memory',
+				pushPortal: 'Push portal files',
+				pushPortalDesc:
+					'Copies the captive-portal files to the router so a login page change reaches this site.',
+				pushPortalAction: 'Push files',
+				pushPortalConfirm:
+					'Queue the portal files for {router}? They are copied on the router’s next heartbeat.',
+				removeCookies: 'Remove duplicate cookies',
+				removeCookiesDesc:
+					'Deletes the local hotspot cookies RouterOS duplicated, which otherwise keep showing users as logged in. This cannot be undone.',
+				removeCookiesAction: 'Remove cookies',
+				removeCookiesConfirm:
+					'This removes every duplicate hotspot cookie on {router} and cannot be undone. Type the router’s name to confirm.',
+				linkRadius: 'Link RADIUS users',
+				linkRadiusDesc:
+					'Matches the router’s local hotspot users to their RADIUS records so sign-in uses the central account.',
+				linkRadiusAction: 'Link users',
+				linkRadiusConfirm: 'Queue the RADIUS link for {router}?',
+				sendCommand: 'Send RouterOS command',
+				sendCommandDesc:
+					'Queues raw RouterOS commands on the router — the escape hatch for anything the buttons above do not cover.',
+				sendCommandAction: 'Write command',
+				sendCommandTitle: 'RouterOS command for {router}',
+				sendCommandLabel: 'Command',
+				sendCommandPlaceholder: '/ip/hotspot/user/print',
+				sendCommandRequired: 'Type the RouterOS command to send.',
+				sendCommandHint:
+					'One command per line, exactly as you would type it in the router’s terminal. It runs on the next heartbeat, not immediately.',
+				confirmTitle: 'Queue this action?',
+				queue: 'Queue it',
+				queued: 'Queued.',
+				queuedGeneric:
+					'Queued. The router picks it up on its next heartbeat.',
+				runFailed: 'Could not queue that action.',
+				diagnoseFailed: 'Could not contact the router.',
+				webNote:
+					'The web dashboard has the full set: compare configurations across routers, all-routers scope, and the task board with each router’s reply. Log into bim.sibuna.us for those.',
 			},
 			withdraw: {
 				title: 'Withdraw',
