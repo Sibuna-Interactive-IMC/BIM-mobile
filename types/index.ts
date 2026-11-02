@@ -1499,6 +1499,51 @@ export interface RouterTaskLogResponse {
 	result?: string;
 }
 
+/** Statuses a document can hold (`documents.status`). */
+export type DocumentStatus = 'pending' | 'approved' | 'rejected';
+
+/** The owner behind a document, as the admin review list returns it. */
+export interface DocumentOwner {
+	id: number;
+	name?: string | null;
+	email?: string | null;
+	phone?: string | null;
+	/** Set from `documents_verified_at`; the document list appends it. */
+	documents_verified?: boolean;
+}
+
+/** One uploaded document in the admin review list (`GET /admin/documents`). */
+export interface AdminDocument {
+	/** UUID. */
+	id: string;
+	type: string;
+	number?: string | null;
+	/** Storage path; the file itself lives behind `GET /documents/{id}/file`. */
+	attachment?: string | null;
+	status: DocumentStatus;
+	user_id?: number | null;
+	created_at?: string | null;
+	updated_at?: string | null;
+	user?: DocumentOwner | null;
+}
+
+/** `GET /admin/documents` — `ApiResponse::paginated` puts the rows at the top level. */
+export interface GetAdminDocumentsResponse {
+	success?: boolean;
+	message?: string;
+	documents?: AdminDocument[];
+	documents_metadata?: PaginationMeta;
+	data?: {
+		documents?: AdminDocument[];
+		documents_metadata?: PaginationMeta;
+	};
+}
+
+/** `PATCH /admin/users/{user}/documents-verification` */
+export type SetDocumentsVerifiedResponse = ApiEnvelope<{
+	user?: DocumentOwner;
+}>;
+
 /** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
 export interface WithdrawalRequestPayload {
 	amount: number;
