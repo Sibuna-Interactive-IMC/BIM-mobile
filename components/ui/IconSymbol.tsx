@@ -92,6 +92,7 @@ const MAPPING: IconMapping = {
 	account: { type: 'material-community', name: 'account-outline' },
 	cash: { type: 'material-community', name: 'cash-multiple' },
 	gateway: { type: 'material-community', name: 'credit-card-sync-outline' },
+	broadcast: { type: 'material-community', name: 'bullhorn-outline' },
 	logout: { type: 'material-community', name: 'logout' },
 	withdrawal: { type: 'material-community', name: 'credit-card-outline' },
 	check: { type: 'material-community', name: 'check' },

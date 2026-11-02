@@ -1225,6 +1225,197 @@ export type GetPaymentRoutingResponse = ApiEnvelope<{
 /** `PUT /admin/payment-provider` — a provider name, or `auto` to clear the override. */
 export type PaymentProviderChoice = string;
 
+/** Who a broadcast goes to. `site` needs a router, `single` a phone number. */
+export type BroadcastAudience = 'all' | 'site' | 'single';
+
+/** Delivery states of one broadcast. */
+export type BroadcastStatus =
+	| 'queued'
+	| 'sending'
+	| 'sent'
+	| 'partial'
+	| 'failed';
+
+/** One number's outcome inside a broadcast. */
+export type RecipientStatus = 'pending' | 'sent' | 'failed' | 'skipped';
+
+/** The audience half of a preview/send request. */
+export interface BroadcastAudienceFilters {
+	audience: BroadcastAudience;
+	router_id?: string;
+	phone?: string;
+	date_from?: string | null;
+	date_to?: string | null;
+	purchases_operator?: 'lt' | 'gt' | 'eq' | null;
+	purchases_count?: number | null;
+	/** Numbers the admin unchecked; excluded from the resolved audience. */
+	excluded?: string[];
+}
+
+/** A router offered in the audience picker (`GET /admin/broadcasts` → `sites`). */
+export interface BroadcastSite {
+	id: string;
+	name: string;
+	label: string;
+	location?: string | null;
+}
+
+/** Server-side caps the composer must not exceed. */
+export interface BroadcastLimits {
+	max_recipients: number;
+	max_message_length: number;
+	sms_segment_length: number;
+	sms_multipart_segment_length: number;
+}
+
+/** A saved message body (`GET /admin/broadcasts/templates`). */
+export interface BroadcastTemplate {
+	id: number;
+	name: string;
+	body: string;
+	created_by?: number | null;
+	created_at?: string | null;
+}
+
+/** `POST /admin/broadcasts/templates` */
+export interface BroadcastTemplatePayload {
+	name: string;
+	body: string;
+}
+
+/** One row of the broadcast history. */
+export interface Broadcast {
+	id: number;
+	message: string;
+	audience: BroadcastAudience;
+	audience_label: string;
+	site?: { id?: string | null; name?: string | null } | null;
+	date_from?: string | null;
+	date_to?: string | null;
+	purchases_filter?: { operator: 'lt' | 'gt' | 'eq'; count: number } | null;
+	channel?: string;
+	status: BroadcastStatus;
+	status_label: string;
+	recipients_count: number;
+	sent_count: number;
+	failed_count: number;
+	skipped_count: number;
+	template?: { id?: number | null; name?: string | null } | null;
+	admin?: { id?: number | null; name?: string | null };
+	excluded?: string[];
+	error?: string | null;
+	queued_at?: string | null;
+	completed_at?: string | null;
+	created_at?: string | null;
+	url?: string;
+}
+
+/**
+ * A number in the recipient picker. The picker rows are the resolved audience,
+ * not saved records, so they only carry what the preview computed.
+ */
+export interface BroadcastRecipientPreview {
+	phone: string;
+	display_phone: string;
+	purchases?: number;
+	first_purchase_at?: string | null;
+	last_purchase_at?: string | null;
+	router_ids?: string[];
+	sites?: string[];
+}
+
+/** `POST /admin/broadcasts/recipients` summary. */
+export interface BroadcastRecipientSummary {
+	total: number;
+	matched: number;
+	excluded: number;
+	max_recipients: number;
+	over_limit: boolean;
+	segments: number;
+}
+
+/** One number's outcome inside a broadcast (`GET /admin/broadcasts/{id}`). */
+export interface BroadcastRecipient {
+	id: number;
+	phone: string;
+	display_phone: string;
+	status: RecipientStatus;
+	status_label: string;
+	error?: string | null;
+	sent_at?: string | null;
+}
+
+/**
+ * `GET /admin/broadcasts` — `ApiResponse::paginated` splices the history plus the
+ * composer's support data at the top level, with no `data` wrapper.
+ */
+export interface GetBroadcastsResponse {
+	success?: boolean;
+	message?: string;
+	broadcasts?: Broadcast[];
+	broadcasts_metadata?: PaginationMeta;
+	sites?: BroadcastSite[];
+	sites_metadata?: PaginationMeta;
+	templates?: BroadcastTemplate[];
+	templates_metadata?: PaginationMeta;
+	limits?: BroadcastLimits;
+	data?: {
+		broadcasts?: Broadcast[];
+		broadcasts_metadata?: PaginationMeta;
+		sites?: BroadcastSite[];
+		templates?: BroadcastTemplate[];
+		limits?: BroadcastLimits;
+	};
+}
+
+/** `POST /admin/broadcasts/recipients` */
+export interface PreviewRecipientsResponse {
+	success?: boolean;
+	message?: string;
+	recipients?: BroadcastRecipientPreview[];
+	recipients_metadata?: PaginationMeta;
+	summary?: BroadcastRecipientSummary;
+	data?: {
+		recipients?: BroadcastRecipientPreview[];
+		recipients_metadata?: PaginationMeta;
+		summary?: BroadcastRecipientSummary;
+	};
+}
+
+/** `GET /admin/broadcasts/{id}` */
+export interface GetBroadcastResponse {
+	success?: boolean;
+	message?: string;
+	broadcast?: Broadcast;
+	recipients?: BroadcastRecipient[];
+	recipients_metadata?: PaginationMeta;
+	data?: {
+		broadcast?: Broadcast;
+		recipients?: BroadcastRecipient[];
+		recipients_metadata?: PaginationMeta;
+	};
+}
+
+/** `GET`/`POST /admin/broadcasts/templates` */
+export interface GetBroadcastTemplatesResponse {
+	success?: boolean;
+	message?: string;
+	templates?: BroadcastTemplate[];
+	templates_metadata?: PaginationMeta;
+	data?: {
+		templates?: BroadcastTemplate[];
+		templates_metadata?: PaginationMeta;
+	};
+}
+
+/** `POST /admin/broadcasts` — the queued send. */
+export interface QueueBroadcastResponse {
+	success?: boolean;
+	message?: string;
+	broadcast?: Broadcast;
+	data?: { broadcast?: Broadcast };
+}
+
 /** `POST /withdrawals/{router}` — step 1 asks for the OTP, step 2 submits it. */
 export interface WithdrawalRequestPayload {
 	amount: number;

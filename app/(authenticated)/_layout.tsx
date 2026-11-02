@@ -45,7 +45,7 @@ function CustomDrawerContent(props: any) {
 				'vouchers',
 				'accounts',
 				'access',
-				...(isAdmin ? ['payment-gateway'] : []),
+				...(isAdmin ? ['payment-gateway', 'broadcasts'] : []),
 				'banks',
 				'connector',
 				'documents',
@@ -129,6 +129,9 @@ function CustomDrawerContent(props: any) {
 						break;
 					case 'payment-gateway':
 						icon = <IconSymbol size={24} name='gateway' color={iconColor} />;
+						break;
+					case 'broadcasts':
+						icon = <IconSymbol size={24} name='broadcast' color={iconColor} />;
 						break;
 					case 'documents':
 						icon = <IconSymbol size={24} name='documents' color={iconColor} />;
@@ -297,6 +300,7 @@ export default function DrawerLayout() {
 				<Drawer.Screen name='accounts' />
 				<Drawer.Screen name='access' />
 				<Drawer.Screen name='payment-gateway' />
+				<Drawer.Screen name='broadcasts' />
 				<Drawer.Screen name='banks' />
 				<Drawer.Screen name='connector' />
 				<Drawer.Screen name='documents' />

@@ -54,8 +54,8 @@ header keeps its drawer button. A new drawer link needs three entries in
 `app/(authenticated)/_layout.tsx`: the route in `allowedRoutes`, an icon in the
 `switch`, and a `<Drawer.Screen name='…' />`, plus a
 `categories.navigation['<route>']` label. Role-specific links are added to
-`allowedRoutes` conditionally (e.g. `payment-gateway` only when
-`isPlatformAdmin(user)`).
+`allowedRoutes` conditionally (e.g. `payment-gateway` and `broadcasts` only
+when `isPlatformAdmin(user)`).
 
 `SegmentedTabs` switches *what a screen shows* (tab panels, filters); a
 single-value form field uses `ThemedRadioButtons`, whose rows carry a label and
