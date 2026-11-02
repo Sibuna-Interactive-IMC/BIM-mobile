@@ -141,6 +141,7 @@ dist
 expo-env.d.ts
 # @end expo-cli
 release.keystore
+output_upload_cert.pem
 google-services.json
 GoogleService-Info.plist
 backend-api.json

@@ -55,3 +55,79 @@ rows never scroll horizontally on a phone.
   `onRefresh`/`refreshing` for pull-to-refresh.
 - All copy goes through `constants/Trans.ts` (`translateWithVariables` for
   strings with placeholders); never inline strings in a screen.
+
+## CI/CD
+
+Two workflows live in `.github/workflows`:
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `ci.yml` | PRs, pushes to `develop`/`main` | `npm ci`, lint, tests. The type check is advisory while the pre-existing `InternetPackage` errors remain. |
+| `android-release.yml` | push to `main`, or manual dispatch | builds a signed `.aab` and uploads it to Google Play |
+
+### One-time setup
+
+1. **Upload keystore** — generate it once and keep it backed up offline; Play
+   validates every future upload against this key. Never commit it
+   (`release.keystore` is already gitignored).
+
+   ```bash
+   keytool -genkeypair -v -keystore upload.keystore -alias upload \
+     -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+2. **Repository secrets** (Settings → Secrets and variables → Actions):
+
+   | Secret | Value |
+   | --- | --- |
+   | `ANDROID_KEYSTORE_BASE64` | `base64 -w0 upload.keystore` |
+   | `ANDROID_KEYSTORE_PASSWORD` | keystore password |
+   | `ANDROID_KEY_ALIAS` | `upload` |
+   | `ANDROID_KEY_PASSWORD` | key password |
+   | `PLAY_SERVICE_ACCOUNT_JSON` | raw JSON key of the Play Developer API service account |
+
+3. **Google Play API access** — enable *Google Play Android Developer API* in
+   Google Cloud, create a service account, then in Play Console → *Setup → API
+   access* link that account and grant it release permissions for the tracks you
+   deploy to.
+
+4. **Optional repository variables**: `API_BASE_URL`, `COUNTRY_CODE`,
+   `COUNTRY_NAME`, `PHONE_NUMBER_LENGTH`, `VERSION_CODE_OFFSET`,
+   `RELEASE_TRACK` and `RELEASE_STATUS`. Defaults match production, with the
+   release going to `internal` as a **draft**.
+
+### Releasing
+
+Releases run on every merge to `main`, and on demand from *Actions → Android
+Release → Run workflow*.
+
+- The first run uploads a **draft** to `internal` — the bundle is on Play but not
+  rolled out, so you can inspect it before testers see it. Once the pipeline has
+  proven itself, set the `RELEASE_STATUS` repository variable to `completed` so
+  later merges roll out to internal testers automatically.
+- Keeping `RELEASE_STATUS=draft` is also a valid policy: every merge lands as a
+  draft and you release manually from the Play Console.
+- `versionName` comes from `package.json` (`version`), so bump it when you want a
+  release to read differently; `versionCode` is `VERSION_CODE_OFFSET +
+  github.run_number`, so it always increases.
+- Promoting from `internal` to production stays a manual step in Play Console.
+- Raise the `VERSION_CODE_OFFSET` variable if the Play listing already has higher
+  codes (it is `1000` by default and the current listing is at `1`).
+
+Local release builds work unchanged: without an upload key configured, `release`
+falls back to the debug keystore. To sign locally, point the same variables at
+your keystore first:
+
+```bash
+# bash / macOS / Linux
+BIM_UPLOAD_STORE_FILE=upload.keystore BIM_UPLOAD_STORE_PASSWORD=YOUR_STORE_PASSWORD \
+BIM_UPLOAD_KEY_ALIAS=upload BIM_UPLOAD_KEY_PASSWORD=YOUR_KEY_PASSWORD ./gradlew bundleRelease
+```
+
+```powershell
+# PowerShell (Windows)
+$env:BIM_UPLOAD_STORE_FILE='upload.keystore'; $env:BIM_UPLOAD_STORE_PASSWORD='YOUR_STORE_PASSWORD'
+$env:BIM_UPLOAD_KEY_ALIAS='upload'; $env:BIM_UPLOAD_KEY_PASSWORD='YOUR_KEY_PASSWORD'
+cd android; .\gradlew.bat bundleRelease
+```
+
