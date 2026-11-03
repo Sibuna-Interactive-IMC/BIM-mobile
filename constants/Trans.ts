@@ -546,6 +546,14 @@ const translations: Translations = {
 				sitesDesc:
 					'Router and access-point locations with their expenses (rent, electricity, maintenance).',
 				sitesStat: '{count} sites',
+				banks: 'Bank Accounts',
+				banksDesc:
+					'The bank accounts payouts are sent to. They belong to your login, not the account.',
+				banksStat: '{count} accounts',
+				paymentGateway: 'Payment Gateway',
+				paymentGatewayDesc:
+					'Which gateway takes collections right now, its circuit state, and the manual override.',
+				paymentGatewayStat: 'Failover & override',
 				business: 'Business Analytics',
 				businessDesc:
 					'Collections, withdrawals, and charges across the whole platform.',

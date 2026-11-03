@@ -13,6 +13,7 @@ import { formatDateTime, ShowAlert, translateWithVariables } from '@/helpers';
 import { getApiData, getApiMessage } from '@/helpers/apiResponse';
 import { isPlatformAdmin } from '@/helpers/permissions';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import useAccountsBack from '@/hooks/useAccountsBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import {
 	fetchPaymentRouting,
@@ -34,6 +35,8 @@ const AUTO = 'auto';
  */
 export default function PaymentGatewayScreen() {
 	useTrackHistory('/(authenticated)/payment-gateway');
+	// Reached from the Accounts hub, so the header steps back to it.
+	useAccountsBack();
 	const { language, authToken, user } = useGeneral();
 	const t = translations[language].categories.paymentGateway;
 	const buttons = translations[language].categories.buttons;

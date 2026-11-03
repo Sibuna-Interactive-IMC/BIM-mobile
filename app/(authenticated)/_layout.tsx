@@ -46,14 +46,8 @@ function CustomDrawerContent(props: any) {
 				'accounts',
 				'access',
 				...(isAdmin
-					? [
-							'payment-gateway',
-							'broadcasts',
-							'router-tools',
-							'document-verification',
-						]
+					? ['broadcasts', 'router-tools', 'document-verification']
 					: []),
-				'banks',
 				'connector',
 				'documents',
 			]),
@@ -128,14 +122,8 @@ function CustomDrawerContent(props: any) {
 					case 'connector':
 						icon = <IconSymbol size={24} name='key' color={iconColor} />;
 						break;
-					case 'banks':
-						icon = <IconSymbol size={24} name='bank' color={iconColor} />;
-						break;
 					case 'access':
 						icon = <IconSymbol size={24} name='users' color={iconColor} />;
-						break;
-					case 'payment-gateway':
-						icon = <IconSymbol size={24} name='gateway' color={iconColor} />;
 						break;
 					case 'broadcasts':
 						icon = <IconSymbol size={24} name='broadcast' color={iconColor} />;

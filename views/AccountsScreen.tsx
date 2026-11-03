@@ -106,6 +106,7 @@ export default function AccountsScreen() {
 	const bim = useThemeColor({}, 'bim');
 	const lime = useThemeColor({}, 'lime');
 	const lightBlue = useThemeColor({}, 'lightBlue');
+	const skyMist = useThemeColor({}, 'skyMist');
 	const yellow = useThemeColor({}, 'yellow');
 	const error = useThemeColor({}, 'error');
 
@@ -214,6 +215,17 @@ export default function AccountsScreen() {
 				}),
 				route: '/(authenticated)/sites',
 			},
+			{
+				key: 'banks',
+				icon: 'bank',
+				tint: skyMist,
+				title: t.banks,
+				description: t.banksDesc,
+				stat: translateWithVariables(t.banksStat, {
+					count: money(summary?.banks_count),
+				}),
+				route: '/(authenticated)/banks',
+			},
 		];
 
 		if (isStaff) {
@@ -262,12 +274,33 @@ export default function AccountsScreen() {
 					description: t.profitDesc,
 					stat: t.profitStat,
 					route: '/(authenticated)/profit',
+				},
+				{
+					key: 'payment-gateway',
+					icon: 'gateway',
+					tint: yellow,
+					title: t.paymentGateway,
+					description: t.paymentGatewayDesc,
+					stat: t.paymentGatewayStat,
+					route: '/(authenticated)/payment-gateway',
 				}
 			);
 		}
 
 		return list;
-	}, [bim, error, isAdmin, isStaff, lightBlue, lime, money, summary, t, yellow]);
+	}, [
+		bim,
+		error,
+		isAdmin,
+		isStaff,
+		lightBlue,
+		lime,
+		money,
+		skyMist,
+		summary,
+		t,
+		yellow,
+	]);
 
 	return (
 		<ParallaxScrollView

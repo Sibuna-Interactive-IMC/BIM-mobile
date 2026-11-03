@@ -80,14 +80,40 @@ describe('the drawer only shows admin routers to admins', () => {
 
 		expect(spread).not.toBeNull();
 		const routes = spread?.[1] ?? '';
-		[
-			'payment-gateway',
-			'broadcasts',
-			'router-tools',
-			'document-verification',
-		].forEach((route) => {
+		['broadcasts', 'router-tools', 'document-verification'].forEach((route) => {
 			expect(routes).toContain(`'${route}'`);
 		});
+	});
+
+	test('banks and the payment gateway are reached from Accounts, not the drawer', () => {
+		// Both moved under the Accounts hub, so neither may be in the drawer's
+		// allowlist (that set alone decides which links render) and neither needs a
+		// drawer icon. The Drawer.Screen registrations stay: they only make the
+		// routes reachable.
+		const allowlist = layout.slice(
+			layout.indexOf('new Set<string>(['),
+			layout.indexOf('])', layout.indexOf('new Set<string>(['))
+		);
+
+		expect(allowlist).not.toContain("'banks'");
+		expect(allowlist).not.toContain("'payment-gateway'");
+		expect(layout).not.toContain("case 'banks':");
+		expect(layout).not.toContain("case 'payment-gateway':");
+		expect(layout).toContain("<Drawer.Screen name='banks' />");
+		expect(layout).toContain("<Drawer.Screen name='payment-gateway' />");
+	});
+
+	test('the Accounts hub offers both as tiles', () => {
+		const accounts = readFileSync(
+			join(root, 'views', 'AccountsScreen.tsx'),
+			'utf8'
+		);
+
+		// Banks are per-user rows, so everyone gets that tile…
+		expect(accounts).toContain("route: '/(authenticated)/banks'");
+		// …while the gateway is the admin tool.
+		const adminBlock = accounts.slice(accounts.indexOf('if (isAdmin) {'));
+		expect(adminBlock).toContain("route: '/(authenticated)/payment-gateway'");
 	});
 
 	test('no admin router is in the unconditional allowlist', () => {

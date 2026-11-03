@@ -10,12 +10,15 @@ import { useGeneral } from '@/context/GeneralContext';
 import { useTransaction } from '@/context/TransactionContext';
 import { generateBank } from '@/helpers/factories';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import useAccountsBack from '@/hooks/useAccountsBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import { Bank as BankType } from '@/types';
 import BankAccount from '@/views/BankAccount';
 
 export default function BanksScreen() {
 	useTrackHistory('/(authenticated)/banks');
+	// Reached from the Accounts hub, so the header steps back to it.
+	useAccountsBack();
 	const { banks, fetchBanks, setBanks } = useTransaction();
 	const { user, language } = useGeneral();
 

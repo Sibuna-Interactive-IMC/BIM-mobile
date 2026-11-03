@@ -28,6 +28,7 @@ jest.mock('expo-router', () => ({
 	usePathname: () => '/',
 }));
 jest.mock('@/hooks/useTrackHistory', () => () => undefined);
+jest.mock('@/hooks/useAccountsBack', () => () => undefined);
 
 let mockUser = { id: 1, platform: { is_admin: true } } as any;
 jest.mock('@/context/GeneralContext', () => ({

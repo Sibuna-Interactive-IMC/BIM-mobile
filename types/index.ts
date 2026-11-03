@@ -1117,6 +1117,8 @@ export interface AccountsSummary {
 	routers_count?: number;
 	my_pending_approvals?: number;
 	disbursement_count?: number;
+	/** Bank accounts saved by the calling login (banks are per-user rows). */
+	banks_count?: number;
 	/** Null when the caller cannot open the admin pages behind the tile. */
 	accounts_count?: number | null;
 	users_count?: number | null;
