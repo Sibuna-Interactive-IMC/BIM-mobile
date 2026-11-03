@@ -57,6 +57,14 @@ header keeps its drawer button. A new drawer link needs three entries in
 `allowedRoutes` conditionally (e.g. `payment-gateway` and `broadcasts` only
 when `isPlatformAdmin(user)`).
 
+The app-bar search (`components/Header.tsx`) is a **feature search**: it lists
+screens the current user may open and navigates to the one that is picked. The
+catalog lives in `helpers/featureSearch.ts` — add an entry there (with its
+`audience`: `everyone`, `staff` or `admin`, and optional `keywords`) plus
+`features['<id>.label']` / `features['<id>.description']` in
+`constants/Trans.ts` so a new screen can be found by name, by what it does, or
+by a synonym (e.g. "sms" → Broadcast).
+
 `SegmentedTabs` switches *what a screen shows* (tab panels, filters); a
 single-value form field uses `ThemedRadioButtons`, whose rows carry a label and
 a description. Never render pills for a radio choice — they read as tabs.

@@ -163,6 +163,76 @@ const translations: Translations = {
 				help: 'Help',
 				logout: 'Logout',
 			},
+			features: {
+				searchPlaceholder: 'Search features…',
+				noResults: 'No feature matches that search',
+				'home.label': 'Dashboard',
+				'home.description':
+					'Earnings overview with recent transactions and router balances.',
+				'routers.label': 'Routers',
+				'routers.description':
+					'Routers, hotspots and their network settings.',
+				'packages.label': 'Packages',
+				'packages.description':
+					'Internet profiles and the packages customers buy.',
+				'vouchers.label': 'Vouchers',
+				'vouchers.description': 'Create and manage hotspot vouchers.',
+				'transactions.label': 'Transactions',
+				'transactions.description':
+					'Every credit and debit on the routers you can access.',
+				'accounts.label': 'Accounts',
+				'accounts.description':
+					'Money hub for transactions, withdrawals, banks and sites.',
+				'withdraw.label': 'Withdraw',
+				'withdraw.description':
+					'Withdraw the balance earned on your routers.',
+				'withdraw-approvals.label': 'Transaction Approvals',
+				'withdraw-approvals.description':
+					'Review and approve withdrawals that need sign-off.',
+				'disbursement-records.label': 'Disbursement Records',
+				'disbursement-records.description':
+					'Track what disbursed funds were used for.',
+				'sites.label': 'Sites',
+				'sites.description':
+					'Router and access-point locations with their expenses.',
+				'banks.label': 'Bank Accounts',
+				'banks.description': 'The bank accounts payouts are sent to.',
+				'access.label': 'Access Management',
+				'access.description':
+					'Members, invitations and the roles they hold.',
+				'connector.label': 'Connector',
+				'connector.description':
+					'WireGuard keys used by the BIM connector.',
+				'documents.label': 'Documents',
+				'documents.description':
+					'Your uploaded documents and verification status.',
+				'profile.label': 'My Profile',
+				'profile.description': 'Personal details, password and avatar.',
+				'notifications.label': 'Notifications',
+				'notifications.description': 'Alerts and account activity.',
+				'business-analytics.label': 'Business Analytics',
+				'business-analytics.description':
+					'Collections, withdrawals and charges across the whole platform.',
+				'accounts-analytics.label': 'Accounts Analytics',
+				'accounts-analytics.description':
+					'Multi-party accounts, owners and finance members.',
+				'admin-users.label': 'User Management',
+				'admin-users.description':
+					'Create logins, set platform roles and manage account membership.',
+				'profit.label': 'Platform Profit',
+				'profit.description':
+					'Withdrawable excess cash after owner balances are covered.',
+				'payment-gateway.label': 'Payment Gateway',
+				'payment-gateway.description':
+					'Active gateway, circuit state and the manual override.',
+				'broadcasts.label': 'Broadcast',
+				'broadcasts.description': 'Send SMS messages to owners and admins.',
+				'router-tools.label': 'Router Tools',
+				'router-tools.description': 'Router utilities and diagnostics.',
+				'document-verification.label': 'Document Verification',
+				'document-verification.description':
+					'Review and verify user documents.',
+			},
 			notifications: {
 				title: 'Notifications',
 				new: 'New',

@@ -1,6 +1,7 @@
 import avatarMaleImg from '@/assets/images/avatar-male.png';
 import { fontSize } from '@/constants/Font';
 import translations from '@/constants/Trans';
+import { searchFeatures, type AppFeature } from '@/helpers/featureSearch';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {
 	headerOptions,
@@ -9,13 +10,20 @@ import {
 	User as UserProps,
 } from '@/types';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import {
 	Animated,
 	Image,
 	Platform,
 	ScrollView,
 	StyleSheet,
+	TextInput,
 	TouchableOpacity,
 	useAnimatedValue,
 	View,
@@ -170,6 +178,32 @@ export default function Header({
 	const [showLanguageSelection, setShowLanguageSelection] = useState(false);
 	const [showNotifications, setShowNotifications] = useState(false);
 	const [showProfile, setShowProfile] = useState(false);
+	const searchInputRef = useRef<TextInput>(null);
+
+	const featuresCopy =
+		translations[language]?.categories?.features ??
+		translations.en.categories.features;
+	const searchResults = useMemo(
+		() => searchFeatures(searchValue, user, language),
+		[searchValue, user, language]
+	);
+	const showSearchResults = showSearchInput && searchValue.trim().length > 0;
+
+	const selectFeature = useCallback(
+		(feature: AppFeature) => {
+			setSearchValue('');
+			setSelectedOption(undefined);
+			router.push(feature.path);
+		},
+		[router, setSelectedOption]
+	);
+
+	// The input is always mounted (only hidden while collapsed), so focus it once it expands
+	useEffect(() => {
+		if (!showSearchInput) return;
+		const timer = setTimeout(() => searchInputRef.current?.focus(), 0);
+		return () => clearTimeout(timer);
+	}, [showSearchInput]);
 
 	const toggleDrawer = (back?: boolean) => {
 		setSelectedOption(undefined);
@@ -263,6 +297,7 @@ export default function Header({
 	const border = useThemeColor({}, 'border');
 	const background = useThemeColor({}, 'background');
 	const listItemBackground = useThemeColor({}, 'listItemBackground');
+	const mutedTextColor = useThemeColor({}, 'mutedText');
 	const languageButtonBackground = useThemeColor(
 		{},
 		'languageButtonBackground'
@@ -384,6 +419,7 @@ export default function Header({
 				}}
 			>
 				<ThemedInput
+					ref={searchInputRef}
 					lightColor={textColor}
 					darkColor={textColor}
 					containerStyle={{ height: 40, flex: 1, marginLeft: 10 }}
@@ -394,9 +430,16 @@ export default function Header({
 						paddingVertical: 0,
 						backgroundColor: inputBackground,
 					}}
-					placeholder='Search...'
+					placeholder={featuresCopy.searchPlaceholder}
 					value={searchValue}
 					setValue={setSearchValue}
+					autoCapitalize='none'
+					autoCorrect={false}
+					returnKeyType='search'
+					onSubmitEditing={() => {
+						if (searchResults.length > 0)
+							selectFeature(searchResults[0].feature);
+					}}
 				/>
 			</Animated.View>
 			<ThemedView
@@ -463,6 +506,88 @@ export default function Header({
 					<UserAvatar uri={user?.avatar_url} online={online} />
 				</TouchableOpacity>
 			</ThemedView>
+			<HeaderDropDownContainer
+				id='header-search-results'
+				visible={showSearchResults}
+				fadeAnim={searchAnimValue}
+			>
+				<ScrollView
+					style={{ maxHeight: 280, backgroundColor: headerDropdownBackground }}
+					contentContainerStyle={{ flexGrow: 1 }}
+					keyboardShouldPersistTaps='handled'
+					keyboardDismissMode='on-drag'
+					nestedScrollEnabled={true}
+					showsVerticalScrollIndicator={true}
+					testID='header-search-results-list'
+				>
+					{searchResults.length === 0 ? (
+						<ThemedText
+							lightColor={textColor}
+							darkColor={textColor}
+							style={{ fontSize: fontSize['text.small'], padding: 10 }}
+						>
+							{featuresCopy.noResults}
+						</ThemedText>
+					) : (
+						searchResults.map((result, index) => (
+							<TouchableOpacity
+								key={result.feature.id}
+								testID={`header-search-result-${result.feature.id}`}
+								onPress={() => selectFeature(result.feature)}
+								activeOpacity={0.7}
+								style={{
+									flexDirection: 'row',
+									alignItems: 'center',
+									gap: 10,
+									paddingVertical: 10,
+									paddingHorizontal: 5,
+									backgroundColor: listItemBackground,
+									borderTopColor: border,
+									borderTopWidth: index === 0 ? 1 : 0,
+									borderBottomColor: border,
+									borderBottomWidth: 1,
+								}}
+							>
+								<IconSymbol
+									name={result.feature.icon}
+									size={20}
+									color={headerIcons}
+								/>
+								<ThemedView
+									lightColor='transparent'
+									darkColor='transparent'
+									style={{ flex: 1 }}
+								>
+									<ThemedText
+										lightColor={textColor}
+										darkColor={textColor}
+										style={{
+											fontSize: fontSize['text.medium'],
+											fontWeight: 500,
+										}}
+									>
+										{result.label}
+									</ThemedText>
+									{result.description ? (
+										<ThemedText
+											lightColor={mutedTextColor}
+											darkColor={mutedTextColor}
+											style={{ fontSize: fontSize['text.small'] }}
+										>
+											{result.description}
+										</ThemedText>
+									) : null}
+								</ThemedView>
+								<IconSymbol
+									name='chevron.right'
+									size={16}
+									color={mutedTextColor}
+								/>
+							</TouchableOpacity>
+						))
+					)}
+				</ScrollView>
+			</HeaderDropDownContainer>
 			<HeaderDropDownContainer
 				id='header-language'
 				visible={showLanguageSelection}
