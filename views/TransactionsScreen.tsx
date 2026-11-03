@@ -337,7 +337,9 @@ export default function TransactionsScreen() {
 				id='transactions-filters-tile'
 				borderless
 				backgroundColor={background}
-				style={styles.section}
+				// The filter menus are absolutely positioned, so the tile that owns
+				// the open menu has to paint above the transaction list below it.
+				style={[styles.section, openDropdown ? styles.raised : null]}
 			>
 				<View style={styles.dateRow}>
 					<View style={styles.dateField}>
@@ -479,6 +481,11 @@ const styles = StyleSheet.create({
 	section: {
 		width: '100%',
 		gap: 10,
+	},
+	/** Lifts the section owning the open dropdown above the sections below it. */
+	raised: {
+		zIndex: 20,
+		elevation: 20,
 	},
 	titleRow: {
 		width: '100%',
