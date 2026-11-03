@@ -31,6 +31,8 @@ export type RecordField = {
 	tone?: RecordTone;
 	/** Render the field across the full card width. */
 	fullWidth?: boolean;
+	/** Compact node rendered right after the value, e.g. marker chips. */
+	trailing?: ReactNode;
 };
 
 export type RecordAction = {
@@ -206,6 +208,7 @@ export function RecordCard({
 									>
 										{field.value}
 									</ThemedText>
+									{field.trailing ?? null}
 								</View>
 							);
 						})}

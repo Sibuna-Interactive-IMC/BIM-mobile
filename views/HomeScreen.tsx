@@ -23,6 +23,7 @@ import { useTransaction } from '@/context/TransactionContext';
 import { formatAmount, formatMMDD, timeAgo, translateWithVariables } from '@/helpers';
 import { signalAppReady } from '@/helpers/appReady';
 import { isPlatformAdmin } from '@/helpers/permissions';
+import { transactionStatusTone } from '@/helpers/transactionStatus';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import { MicroTransaction } from '@/types';
@@ -287,11 +288,15 @@ export default function HomeScreen() {
 							<RecordCard
 								key={index}
 								id={`dashboard-transaction-${index}`}
+								title={transaction.routerName || '—'}
+								badge={{
+									label:
+										translations[language].categories.transactions[
+											transaction.status
+										] ?? transaction.status,
+									tone: transactionStatusTone(transaction.status),
+								}}
 								fields={[
-									{
-										label: translations[language].categories.dashboard.routerName,
-										value: transaction.routerName || '—',
-									},
 									{
 										label: translations[language].categories.dashboard.amount,
 										value: transaction.amount,

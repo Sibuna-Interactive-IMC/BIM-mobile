@@ -17,10 +17,13 @@ rows never scroll horizontally on a phone.
     header action (`title`, `description`, `headerAction`, `loading`, `isEmpty`).
   - `RecordCard` renders one record: optional `title`/`subtitle`, `badge` (status
     pill), `fields` (compact two-column grid of inline label/value pairs that
-    wraps; set `fullWidth` for long values) and `actions` (buttons wrap under the
-    fields, so a row with an action button never needs a horizontal scroll).
-    Cards that are pure data — e.g. transactions — omit `title`/`subtitle` and
-    carry every value (including the site/router name) as a `field`. Action `tone`
+    wraps; set `fullWidth` for long values, or `trailing` for a compact chip —
+    e.g. the `M`/`T` voucher-origin markers — that sits after the value without
+    stretching the tile) and `actions` (buttons wrap under the fields, so a row
+    with an action button never needs a horizontal scroll).
+    Cards that are pure data carry every value as a `field` — the dashboard's
+    recent transactions lead with the router name as the `title` and keep the
+    credit/debit status in the `badge`. Action `tone`
     keeps the app's colour coding: `primary` (the brand `bim` colour) for
     view/open and for single-action cards, `warning` (yellow) for edit, `danger`
     (red) for delete/block, `success` (lime) for approve/confirm,

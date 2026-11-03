@@ -1,7 +1,7 @@
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
-import type { RecordBadge, RecordField, RecordTone } from '@/components/RecordList';
+import type { RecordBadge, RecordField } from '@/components/RecordList';
 import { ThemedButton } from '@/components/ThemedButton';
 import ThemedDatePicker from '@/components/ThemedDatePicker';
 import { ThemedDropdown } from '@/components/ThemedDropdown';
@@ -19,6 +19,7 @@ import {
 } from '@/helpers';
 import { getApiData, getApiPagination } from '@/helpers/apiResponse';
 import { isPlatformAdmin } from '@/helpers/permissions';
+import { transactionStatusTone } from '@/helpers/transactionStatus';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useAccountsBack from '@/hooks/useAccountsBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
@@ -33,17 +34,6 @@ import {
 } from 'react-native';
 
 const PAGE_SIZE = 20;
-
-const STATUS_TONES: Record<string, RecordTone> = {
-	successful: 'success',
-	completed: 'success',
-	approved: 'success',
-	pending_approval: 'info',
-	pending: 'warning',
-	reversed: 'muted',
-	failed: 'danger',
-	rejected: 'danger',
-};
 
 /** `GET /transactions` — the paged, filterable credit/debit ledger. */
 export default function TransactionsScreen() {
@@ -236,7 +226,7 @@ export default function TransactionsScreen() {
 		if (!status) return undefined;
 		return {
 			label: status.replace(/_/g, ' '),
-			tone: STATUS_TONES[status] ?? 'warning',
+			tone: transactionStatusTone(status),
 		};
 	};
 

@@ -45,6 +45,7 @@ import {
 	Animated,
 	Pressable,
 	StyleSheet,
+	Text,
 	useAnimatedValue,
 	View,
 } from 'react-native';
@@ -205,6 +206,41 @@ const VoucherCard = memo(function VoucherCard({
 	const actionKey = (action: VoucherAction) => `${action}:${username}`;
 	const disabled = voucher.is_disabled || voucher.status === 'disabled';
 	const session = voucher.uptime || voucher.session_time;
+	const markerInk = useThemeColor({}, 'white');
+	const manualMarkerBg = useThemeColor({}, 'lightBlue');
+	const trialMarkerBg = useThemeColor({}, 'yellow');
+
+	// Web marks hand-made and free-trial vouchers with a compact "M"/"T" chip
+	// next to the code; the marker is its own node so it never joins the value.
+	const originMarkers =
+		voucher.is_manual || voucher.is_trial ? (
+			<>
+				{voucher.is_manual ? (
+					<View
+						style={[styles.originMarker, { backgroundColor: manualMarkerBg }]}
+					>
+						<Text
+							style={[styles.originMarkerText, { color: markerInk }]}
+							accessibilityLabel={labels.manualIndicator}
+						>
+							M
+						</Text>
+					</View>
+				) : null}
+				{voucher.is_trial ? (
+					<View
+						style={[styles.originMarker, { backgroundColor: trialMarkerBg }]}
+					>
+						<Text
+							style={[styles.originMarkerText, { color: markerInk }]}
+							accessibilityLabel={labels.trialIndicator}
+						>
+							T
+						</Text>
+					</View>
+				) : null}
+			</>
+		) : null;
 
 	const fields: RecordField[] = [
 		{
@@ -212,7 +248,7 @@ const VoucherCard = memo(function VoucherCard({
 			value: voucher.status,
 			tone: statusTone(voucher.status),
 		},
-		{ label: labels.username, value: username },
+		{ label: labels.username, value: username, trailing: originMarkers },
 		{ label: labels.router, value: voucher.router_name || '—' },
 		{ label: labels.profile, value: voucher.profile_display || voucher.profile || '—' },
 		{ label: labels.session, value: session || '—' },
@@ -1131,6 +1167,18 @@ const styles = StyleSheet.create({
 	section: {
 		width: '100%',
 		gap: 10,
+	},
+	/** Compact "M"/"T" chip after the voucher code, like the web markers. */
+	originMarker: {
+		alignSelf: 'center',
+		marginLeft: 4,
+		paddingHorizontal: 5,
+		paddingVertical: 1,
+		borderRadius: 4,
+	},
+	originMarkerText: {
+		fontSize: fontSize['text.xsmall'],
+		fontWeight: '700',
 	},
 	overviewHeader: {
 		width: '100%',

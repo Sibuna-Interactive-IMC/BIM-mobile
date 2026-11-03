@@ -512,6 +512,8 @@ const translations: Translations = {
 				allOrigins: 'All origins',
 				manualOnly: 'Manual only',
 				autoOnly: 'Auto only',
+				manualIndicator: 'Manual',
+				trialIndicator: 'Trial',
 				searchPlaceholder: 'Search username…',
 				router: 'Router',
 				session: 'Session',
