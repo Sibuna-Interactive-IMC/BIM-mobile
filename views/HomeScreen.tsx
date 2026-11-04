@@ -16,11 +16,12 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ScreenHeader from '@/components/ScreenHeader';
 import TileContainer from '@/components/TileContainer';
+import TransactionVolumeChart from '@/components/TransactionVolumeChart';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useTransaction } from '@/context/TransactionContext';
-import { formatAmount, formatMMDD, timeAgo, translateWithVariables } from '@/helpers';
+import { formatAmount, timeAgo, translateWithVariables } from '@/helpers';
 import { signalAppReady } from '@/helpers/appReady';
 import { isPlatformAdmin } from '@/helpers/permissions';
 import { transactionStatusTone } from '@/helpers/transactionStatus';
@@ -28,7 +29,6 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import { MicroTransaction } from '@/types';
 import { useRouter } from 'expo-router';
-import { BarChart } from 'react-native-chart-kit';
 
 export default function HomeScreen() {
 	const {
@@ -97,6 +97,9 @@ export default function HomeScreen() {
 	const headerText = useThemeColor({}, 'headers');
 	const textLight = useThemeColor({}, 'text', 'light');
 	const textDark = useThemeColor({}, 'text', 'dark');
+	const chartBarColor = useThemeColor({}, 'dayIconBackground');
+	const chartGridColor = useThemeColor({}, 'borderDark');
+	const chartLabelColor = useThemeColor({}, 'text');
 	const iconTint = useThemeColor({}, 'iconTint');
 	const dayText = useThemeColor({}, 'dayText');
 	const dayIconBackground = useThemeColor({}, 'dayIconBackground');
@@ -128,6 +131,15 @@ export default function HomeScreen() {
 		lastFiveTransactions && lastFiveTransactions.length > 0
 			? lastFiveTransactions
 			: [];
+	const transactionVolumeData = user?.dashboard?.chartData
+		? user.dashboard.chartData.map((chartPoint) => ({
+				date: new Date(chartPoint.date),
+				amount: Number(chartPoint.total) || 0,
+			}))
+		: (lastSevenDaysPurchases ?? []).map((purchase) => ({
+				date: purchase.date,
+				amount: purchase.amount,
+			}));
 
 	// Signal that the home screen is ready to be considered the first painted
 	// app view. We call this after two animation frames to give the view time
@@ -349,9 +361,7 @@ export default function HomeScreen() {
 				</TileContainer>
 				<TileContainer
 					id='transaction-volume-chart'
-				borderless
 					backgroundColor={background}
-					style={{ flexDirection: 'column', overflow: 'hidden' }}
 				>
 					<ThemedView
 						style={{ flex: 1 }}
@@ -377,51 +387,20 @@ export default function HomeScreen() {
 					<ThemedView
 						lightColor={backgroundLight}
 						darkColor={backgroundDark}
-						style={{
-							position: 'relative',
-						}}
+						style={{ marginVertical: 8 }}
 					>
-						<BarChart
-							data={{
-								labels: [
-									...(user?.dashboard?.chartData
-										? user.dashboard.chartData.map((c) =>
-											formatMMDD(new Date(c.date))
-										)
-										: (lastSevenDaysPurchases ?? []).map((p) =>
-											formatMMDD(p.date)
-										)),
-								],
-								datasets: [
-									{
-										data: [
-											...(user?.dashboard?.chartData
-												? user.dashboard.chartData.map((c) => c.total)
-												: (lastSevenDaysPurchases ?? []).map((p) => p.amount)),
-										],
-									},
-								],
-							}}
-							width={width - 30}
-							height={220}
-							yAxisSuffix=''
-							yAxisLabel=''
-							chartConfig={{
-								backgroundGradientFrom: background,
-								backgroundGradientTo: background,
-								decimalPlaces: 0,
-								color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-								labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
-							}}
-							style={{ marginVertical: 8, borderRadius: 8, left: -20 }}
+						<TransactionVolumeChart
+							points={transactionVolumeData}
+							width={width - 72}
+							barColor={chartBarColor}
+							gridColor={chartGridColor}
+							labelColor={chartLabelColor}
 						/>
 					</ThemedView>
 				</TileContainer>
 				<TileContainer
 					id='router-balances'
-					borderless
 					backgroundColor={background}
-					style={{ flexDirection: 'column', overflow: 'hidden' }}
 				>
 					<ThemedView
 						style={{ flex: 1 }}

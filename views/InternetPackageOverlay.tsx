@@ -73,17 +73,18 @@ export default function InternetPackageOverlay({
 
 	useEffect(() => {
 		if (visible) {
-			setName(initial?.tag ?? '');
+			const simultaneousUse = initial?.['simultaneous-use'];
+			const sessionTimeout = initial?.['session-timeout'];
+			setName(initial?.name ?? '');
 			setUsersPerDevice(
-				initial?.usersPerDevice !== undefined &&
-					initial?.usersPerDevice !== null
-					? String(initial.usersPerDevice)
+				simultaneousUse !== undefined && simultaneousUse !== null
+					? String(simultaneousUse)
 					: '1'
 			);
-			setBandwidth(initial?.bandwidth ?? '');
+			setBandwidth(initial?.['rate-limit'] ?? '');
 			setDuration(
-				initial?.duration !== undefined && initial?.duration !== null
-					? String(initial.duration)
+				sessionTimeout !== undefined && sessionTimeout !== null
+					? String(sessionTimeout)
 					: '1'
 			);
 		}

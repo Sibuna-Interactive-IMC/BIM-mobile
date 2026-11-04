@@ -21,9 +21,9 @@ jobs:
     name: Lint, typecheck and tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -37,8 +37,5 @@ jobs:
       - name: Tests
         run: npm test
 
-      # The repo carries pre-existing InternetPackage type errors; keep this
-      # advisory until they are fixed so it cannot block unrelated PRs.
       - name: Type check
         run: npx tsc --noEmit
-        continue-on-error: true
