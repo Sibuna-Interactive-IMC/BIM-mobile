@@ -127,11 +127,21 @@ jobs:
           console.log('google-services.json is valid Firebase config');
           NODE
 
-      - name: Ensure required NDK
+      - name: Ensure required Android SDK packages
         run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -d "$ANDROID_HOME/ndk/$NDK_VERSION" ]; then
-            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" > /dev/null
+            yes | "$SDKMANAGER" --install "ndk;$NDK_VERSION" > /dev/null
           fi
+          # compileSdk/targetSdk 36 (Android 16) is required by Play. Hosted
+          # runners do not always ship every platform, so install on demand.
+          for package in "platforms;android-36" "build-tools;36.0.0"; do
+            dir="${package%%;*}"
+            version="${package##*;}"
+            if [ ! -d "$ANDROID_HOME/$dir/$version" ]; then
+              yes | "$SDKMANAGER" --install "$package" > /dev/null
+            fi
+          done
 
       - name: Build release bundle
         working-directory: android

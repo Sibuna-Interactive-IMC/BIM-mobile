@@ -158,6 +158,13 @@ Release → Run workflow*.
 - `versionName` comes from `package.json` (`version`), so bump it when you want a
   release to read differently; `versionCode` is `VERSION_CODE_OFFSET +
   github.run_number`, so it always increases.
+- Google Play requires new uploads to target API 36 (Android 16). Expo SDK 53's
+  React Native catalog still defaults to 35, so the level is pinned in
+  `android/gradle.properties` (`android.compileSdkVersion`,
+  `android.targetSdkVersion`, `android.buildToolsVersion`) and mirrored in the
+  `expo-build-properties` block in `app.config.js` so an `expo prebuild` keeps
+  it. Raise both together, and the `for package in …` list in the release
+  workflow, when Expo ships a catalog that matches.
 - Promoting from `internal` to production stays a manual step in Play Console.
 - Raise the `VERSION_CODE_OFFSET` variable if the Play listing already has higher
   codes (it is `1000` by default and the current listing is at `1`).
