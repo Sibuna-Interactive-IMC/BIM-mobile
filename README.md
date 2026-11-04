@@ -88,14 +88,15 @@ Two workflows live in `.github/workflows`:
    | `ANDROID_KEY_ALIAS` | plain | `upload` |
    | `ANDROID_KEY_PASSWORD` | plain | key password |
    | `PLAY_SERVICE_ACCOUNT_JSON` | plain JSON | the whole `*.json` key file from step 3, pasted as-is |
-   | `GOOGLE_SERVICES_JSON` | base64 or plain JSON | `base64 -w0 google-services.json` — FCM config, required for push in release builds |
+   | `GOOGLE_SERVICES_JSON` | base64 or plain JSON | `base64 -w0 google-services.json` — the complete Firebase Android config, required for push in release builds |
 
    Only the two file blobs are base64 — `ANDROID_KEYSTORE_BASE64` because the
    workflow decodes it back to a keystore, and `GOOGLE_SERVICES_JSON` by
    convention (the workflow also accepts the raw file and validates it before
-   the build). The service account stays **raw JSON**: the Play upload action
-   reads it as plain text (`serviceAccountJsonPlainText`), so a base64 value
-   there would fail auth.
+   the build). Use the full `google-services.json` downloaded from Firebase,
+   not just an API key or another credential. The service account stays
+   **raw JSON**: the Play upload action reads it as plain text
+   (`serviceAccountJsonPlainText`), so a base64 value there would fail auth.
 
 3. **Play service account** — this produces the `PLAY_SERVICE_ACCOUNT_JSON`
    value. It is a server credential that can publish to your listing, so treat
@@ -263,4 +264,3 @@ out over FCM.
   the Firebase project.
 - The notification icon is `assets/images/notification-icon.png`, generated from
   the BIM wordmark by `scripts/make-notification-icon.ps1`.
-
