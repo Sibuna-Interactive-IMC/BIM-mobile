@@ -1,0 +1,16 @@
+{
+    "recommendations": [
+        "continue.continue",
+        "vizards.deepseek-v4-for-copilot"
+    ],
+    "//": "Expo/React Native (TypeScript) project. Java + Spring tooling is intentionally unused:",
+    "//2": "android/*.gradle activates the Red Hat Java LS, which spawned ~8 JVMs + multiple Gradle daemons on a 16 GB machine.",
+    "unwantedRecommendations": [
+        "vscjava.vscode-java-pack",
+        "redhat.java",
+        "georgewfraser.vscode-javac",
+        "vscjava.vscode-spring-initializr",
+        "sandipchitale.vscode-spring-initializr-webview",
+        "vmware.vscode-boot-dev-pack"
+    ]
+}

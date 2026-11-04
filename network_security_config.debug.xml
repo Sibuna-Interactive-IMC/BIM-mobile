@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug builds only — copied to android/app/src/debug/res/xml/ by
+  plugins/withNetworkSecurityConfig.js. The debug source set overrides the
+  main resource of the same name, so release builds keep the narrower list in
+  network_security_config.xml.
+
+  A <domain> entry matches one literal host, IP addresses included; the
+  format has no wildcard or subnet syntax (192.168.1.* is not valid). Debug
+  builds therefore allow cleartext to any host, which covers a LAN backend
+  whose address changes between machines and networks.
+
+  Note: android:usesCleartextTraffic is ignored on API 24+ when a network
+  security config is present, so it cannot be used instead of this file.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain> <!-- For Android Emulator -->
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.1.71</domain>
+    </domain-config>
+</network-security-config>

@@ -1,0 +1,15 @@
+# Files excluded from Continue context gathering (autocomplete + indexing).
+# Generated native build trees: huge, never hand-edited, and expensive to read.
+android/build/
+android/app/build/
+android/.gradle/
+android/app/.cxx/
+android/.cxx/
+ios/Pods/
+ios/build/
+.expo/
+dist/
+coverage/
+web-build/
+*.min.js
+*.min.css

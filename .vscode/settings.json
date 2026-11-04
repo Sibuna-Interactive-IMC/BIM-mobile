@@ -1,7 +1,81 @@
 {
+  "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.formatOnType": false
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.formatOnType": false
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+    "editor.formatOnType": false
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+    "editor.formatOnType": false
+  },
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.tabCompletion": "off",
+  "editor.wordBasedSuggestions": "matchingDocuments",
+  "editor.suggest.showWords": true,
+  "editor.parameterHints.enabled": true,
+  "editor.inlineSuggest.enabled": true,
+  "editor.acceptSuggestionOnEnter": "on",
+  "continue.enableTabAutocomplete": true,
+  // Next-edit suggestions issue a model call on every doc change and were the
+  // single biggest CPU cost of Continue. Plain ghost text is far cheaper.
+  "continue.enableNextEdit": false,
+  "continue.pauseTabAutocompleteOnBattery": false,
+  "continue.showInlineTip": false,
+  "github.copilot.enable": {
+    "*": false
+  },
+  "github.copilot.nextEditSuggestions.enabled": false,
+  "js/ts.suggest.enabled": true,
+  "js/ts.suggest.autoImports": true,
+  "js/ts.suggest.completeFunctionCalls": true,
+  "js/ts.preferences.importModuleSpecifier": "shortest",
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  // NOTE (2026-09): the Java/Spring language servers were removed from this
+  // machine. They activated on android/*.gradle and spawned ~8 JVMs plus
+  // several Gradle daemons. Do not re-add them for this Expo project.
+
+  // Keep the file watcher out of generated native build trees - watching them
+  // is pure CPU/disk churn and nothing in them is hand-edited.
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.expo/**": true,
+    "**/android/build/**": true,
+    "**/android/app/build/**": true,
+    "**/android/.gradle/**": true,
+    "**/android/app/.cxx/**": true,
+    "**/ios/Pods/**": true,
+    "**/ios/build/**": true,
+    "**/dist/**": true,
+    "**/coverage/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/android/build": true,
+    "**/android/app/build": true,
+    "**/android/.gradle": true,
+    "**/ios/Pods": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "package-lock.json": true
   }
 }

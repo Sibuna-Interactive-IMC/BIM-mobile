@@ -1,7 +1,14 @@
 {
   "extends": "expo/tsconfig.base",
+  "typeRoots": [
+    "./types",
+    "./node_modules/@types"
+  ],
   "compilerOptions": {
     "strict": true,
+    "skipLibCheck": true,
+    "types": [],
+    "jsx": "react-jsx",
     "paths": {
       "@/*": [
         "./*"
@@ -13,5 +20,10 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules/*",
+    ".storybook"
   ]
 }
