@@ -297,7 +297,7 @@ export interface TrialSettings {
 export type GetPortalPackagesResponse = ApiEnvelope<{
 	scope: 'visible' | 'global' | 'owner' | 'all';
 	packages: PortalPackage[];
-	}>;
+}>;
 
 /** `GET /packages/{package}/routers` */
 export type GetPackageRoutersResponse = ApiEnvelope<{
@@ -305,7 +305,7 @@ export type GetPackageRoutersResponse = ApiEnvelope<{
 	routers: PackageRouter[];
 	rate_limits: Record<string, PackageRateLimit>;
 	visibility?: Record<string, unknown>[];
-	}>;
+}>;
 
 /** `GET /profiles` */
 export type GetSharedRadiusProfilesResponse = ApiEnvelope<{ scope: 'shared'; profiles: SharedRadiusProfile[] }>;
@@ -478,13 +478,13 @@ export interface dayPurchase {
 
 export type Translations = {
 	[key in langCode]: {
-	name: lang;
-	active: boolean; // Indicates if the language is fully translated and active
-	categories: {
-		[categoryKey: string]: {
-			[translationKey: string]: string;
+		name: lang;
+		active: boolean; // Indicates if the language is fully translated and active
+		categories: {
+			[categoryKey: string]: {
+				[translationKey: string]: string;
+			};
 		};
-	};
 	};
 };
 
@@ -705,14 +705,14 @@ export interface RouterStatusRecord {
 export type GetRouterStatusResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	status?: RouterStatusRecord | null;
-	}>;
+}>;
 
 /** `GET /routers/{router}/status` (202 — a read was queued, poll with `cache_key`). */
 export type GetRouterStatusQueuedResponse = ApiEnvelope<{
 	status?: string;
 	cache_key?: string;
 	retry_after?: number;
-	}>;
+}>;
 
 /** `GET /routers/{router}/hotspots` */
 export type GetRouterHotspotsResponse = ApiEnvelope<{
@@ -721,28 +721,28 @@ export type GetRouterHotspotsResponse = ApiEnvelope<{
 	status?: RouterStatusRecord | null;
 	pending?: boolean;
 	retry_after?: number | null;
-	}>;
+}>;
 
 /** `GET /routers/{router}/hotspot-cookies` */
 export type GetRouterCookiesResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	cookies?: Cookie[];
 	cookies_links?: string;
-	}>;
+}>;
 
 /** `GET /routers/{router}/hotspots/active` */
 export type GetRouterActiveUsersResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	active?: HotspotActiveUser[];
 	active_links?: string;
-	}>;
+}>;
 
 /** `GET /routers/{router}/hotspots/users` */
 export type GetRouterUsersResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	users?: HotspotUser[];
 	users_links?: string;
-	}>;
+}>;
 
 /** Voucher lifecycle state used by `GET /vouchers` filters and `Voucher.status`. */
 export type VoucherStatus =
@@ -1909,14 +1909,14 @@ export type GetRouterHostsResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	hosts?: Host[];
 	hosts_links?: string;
-	}>;
+}>;
 
 /** `GET /routers/{router}/dhcp/leases` */
 export type GetRouterDHCPLeasesResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	leases?: DHCPLease[];
 	leases_links?: string;
-	}>;
+}>;
 
 /** A network interface as returned by `GET /routers/{router}/interfaces`. */
 export interface RouterInterface {
@@ -1934,7 +1934,7 @@ export interface RouterInterface {
 export type GetRouterInterfacesResponse = ApiEnvelope<{
 	router?: ApiRouter;
 	interfaces?: RouterInterface[];
-	}>;
+}>;
 
 /** `GET /routers/{router}` */
 export type GetRouterResponse = ApiEnvelope<{ router?: ApiRouter }>;
@@ -1952,7 +1952,7 @@ export type GetRadiusProfileResponse = ApiEnvelope<{ profiles: SharedRadiusProfi
 export type PingRouterResponse = ApiEnvelope<{
 	online?: boolean;
 	router?: { id?: string; name?: string; ip?: string };
-	}>;
+}>;
 
 /** Identity payload (`IdentityContextResponse` schema). */
 export interface IdentityContext {

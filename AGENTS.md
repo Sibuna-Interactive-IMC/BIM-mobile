@@ -151,6 +151,17 @@ The backend fans out over FCM, so the app registers its own device token with
   rolls, and on a tap opens the route in the payload's `link.app`
   (`helpers/pushNotifications.ts` resolves it; unknown or stale links land on
   `/(authenticated)/notifications`).
+- Push only works in a development or release build — Expo Go dropped remote
+  notifications in SDK 53, so the hook bails out there with a pointer to
+  `npm run dev:android` / `dev:ios`. `expo-dev-client` is installed for this;
+  `npm run dev:start` re-attaches Metro to an already-built client.
+- The Android scripts run through `scripts/with-java.js` so a stale machine
+  `JAVA_HOME` cannot break the build; never hardcode a JDK path in a committed
+  file.
+- LAN cleartext HTTP is a debug-only allowance: `network_security_config.debug.xml`
+  overrides the main network security config for the `debug` source set. Android
+  network security configs match literal hosts only (no `192.168.1.*`), so never
+  widen the main config just to reach a new dev address.
 - `GeneralContext.handleLogout` calls `DELETE /push-devices/{id}` before the
   bearer token is dropped. The token identifies the install, so skipping this
   leaves the next user receiving the previous user's pushes.

@@ -178,6 +178,78 @@ $env:BIM_UPLOAD_KEY_ALIAS='upload'; $env:BIM_UPLOAD_KEY_PASSWORD='YOUR_KEY_PASSW
 cd android; .\gradlew.bat bundleRelease
 ```
 
+## Development builds
+
+Expo Go cannot receive remote push notifications from SDK 53 onwards, and it
+cannot load the Firebase config, so push only works in a development build (or a
+release build). `expo-dev-client` is installed for this.
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev:android` | builds the debug/dev-client APK and installs it on the connected emulator or device |
+| `npm run dev:ios` | same for the iOS simulator or a connected device |
+| `npm run dev:start` | starts Metro for an already-installed dev build (no native rebuild) |
+| `npm run android` / `npm run ios` | same build, with a picker when several devices are attached |
+
+Expo CLI loads `.env` automatically, so `API_BASE_URL` (and the rest) come from
+there — no `dotenv` wrapper needed. On Android, `android/app/google-services.json`
+must exist before the build (see [Push notifications](#push-notifications)) or the
+APK ships without FCM. Push also needs a device image with Google Play services;
+a plain AOSP emulator has no FCM.
+
+Gradle needs a JDK 17+, but an outdated machine-wide `JAVA_HOME` (a Java 8
+folder, or the `bin` directory itself) makes every build die with
+`JAVA_HOME is set to an invalid directory`. The Android scripts therefore run
+through `scripts/with-java.js`, which finds a usable JDK and passes it to Gradle
+only:
+
+1. `BIM_JAVA_HOME`, 2. the current `JAVA_HOME` if it is a real JDK 17+, 3. Android
+Studio's bundled JBR, 4. an installed JDK (Adoptium, Microsoft, `/usr/lib/jvm`, …),
+5. whichever `java` is on `PATH`.
+
+Check what it would pick with `node ./scripts/with-java.js --print`. To fix the
+variable itself (so plain `./gradlew` works too), point it at the JDK root — not
+its `bin` folder — and reopen the terminal:
+
+```powershell
+# Windows: machine-wide value needs an elevated shell; setx writes the user value
+setx JAVA_HOME "C:\Program Files\Android\Android Studio\jbr" /M
+```
+
+```bash
+# macOS / Linux
+export JAVA_HOME=/Applications/Android\ Studio.app/Contents/jbr/Contents/Home
+```
+
+Installing the dev build over a Play-signed copy fails with
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE: … signatures do not match`, because the
+debug APK uses `debug.keystore`. Uninstall the store version once
+(`adb uninstall com.muganwas.BIMmobile` — this also removes its data) or install
+on an emulator.
+
+### Cleartext HTTP on a LAN backend
+
+`<domain>` entries in a network security config match **one literal host** — IPs
+included — and the format has no wildcard or subnet syntax, so `192.168.1.*` is
+not expressible. Instead, debug builds get their own config:
+`network_security_config.debug.xml` is copied to
+`android/app/src/debug/res/xml/network_security_config.xml`, where the debug
+source set overrides the main resource with:
+
+```xml
+<base-config cleartextTrafficPermitted="true" />
+```
+
+That permits plain HTTP to any address while developing, so the backend can sit
+on any `192.168.1.x`. Release builds keep the narrow list in
+`network_security_config.xml` — add an address there only if a release build
+must reach a fixed LAN host. `android:usesCleartextTraffic` is ignored on API 24+
+while a network security config is present, so it is not an alternative.
+
+A device plugged in over USB can skip the whole question with a reverse tunnel:
+`adb reverse tcp:8000 tcp:8000`, then point `API_BASE_URL` at
+`http://localhost:8000` (`localhost` is allowed in the release config too).
+
 ## Push notifications
 
 The app registers each install with `POST /push-devices` and the backend fans

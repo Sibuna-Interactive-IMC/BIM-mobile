@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
@@ -21,6 +21,13 @@ import type { PushDevice, PushPlatform } from '@/types';
 
 /** Android channel the backend's FCM messages are delivered on. */
 const ANDROID_CHANNEL_ID = 'default';
+
+/**
+ * Expo Go (the store client) cannot receive remote pushes from SDK 53 onwards;
+ * they only work in a development build or a release build.
+ */
+const isExpoGo =
+	Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 // A push that arrives while the app is in the foreground should still be shown,
 // otherwise FCM messages look like they were dropped.
@@ -110,6 +117,15 @@ export default function usePushNotifications() {
 
 	useEffect(() => {
 		if (!authToken || Platform.OS === 'web') return;
+
+		// Expo Go cannot mint a device token, and asking for the permission only
+		// to fail is worse than saying what to run instead.
+		if (isExpoGo) {
+			console.log(
+				'[push] Expo Go cannot receive remote pushes — run `npm run dev:android` (or dev:ios) for a development build'
+			);
+			return;
+		}
 
 		let cancelled = false;
 
