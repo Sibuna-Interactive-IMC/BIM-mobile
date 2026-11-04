@@ -21,8 +21,25 @@ jest.mock('@expo/vector-icons', () => ({
 	MaterialCommunityIcons: () => null,
 	Ionicons: () => null,
 }));
-jest.mock('react-native-svg', () => ({ SvgUri: () => null }));
-jest.mock('react-native-chart-kit', () => ({ BarChart: () => null }));
+jest.mock('react-native-svg', () => {
+	const React = jest.requireActual('react');
+	const { Text, View } = jest.requireActual('react-native');
+	const Container = ({ children }: any) =>
+		React.createElement(View, null, children);
+	const Label = ({ children }: any) =>
+		React.createElement(Text, null, children);
+	return {
+		SvgUri: () => null,
+		Svg: Container,
+		G: Container,
+		Defs: Container,
+		LinearGradient: Container,
+		Stop: () => null,
+		Line: () => null,
+		Rect: () => null,
+		Text: Label,
+	};
+});
 jest.mock('@react-navigation/bottom-tabs', () => ({
 	useBottomTabBarHeight: () => 0,
 }));
@@ -40,7 +57,18 @@ jest.mock('@/context/GeneralContext', () => ({
 	useGeneral: () => ({
 		setSelectedOption: jest.fn(),
 		language: 'en',
-		user: { id: 1, platform: { is_admin: false } },
+		user: {
+			id: 1,
+			platform: { is_admin: false },
+			dashboard: {
+				chartData: [
+					{ date: '2026-11-01', total: 21000 },
+					{ date: '2026-11-02', total: 61000 },
+					{ date: '2026-11-03', total: 100001 },
+					{ date: '2026-11-04', total: 139000 },
+				],
+			},
+		},
 		refreshDashboard: jest.fn(),
 		dashboardLoading: false,
 		lastDashboardUpdated: null,
@@ -118,5 +146,14 @@ describe('HomeScreen transaction tiles', () => {
 		// The router name is the card title, not a field.
 		expect(getByText('Orange Hostel')).toBeTruthy();
 		expect(() => getByText('Router Name')).toThrow();
+	});
+
+	it('renders flat 20k transaction volume axis labels', () => {
+		const { getAllByText, getByText } = render(<HomeScreen />);
+
+		expect(getAllByText('0').length).toBeGreaterThan(0);
+		['20K', '40K', '60K', '80K', '100K', '120K', '140K'].forEach(
+			(label) => expect(getByText(label)).toBeTruthy()
+		);
 	});
 });

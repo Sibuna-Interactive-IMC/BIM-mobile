@@ -154,10 +154,9 @@ export default function HotspotPackagesScreen() {
 						? {
 							...p,
 							name: toPkgName(payload.name),
-							usersPerDevice: payload.usersPerDevice,
-							bandwidth: payload.bandwidth,
-							duration: payload.duration,
-							updatedAt: new Date(),
+							'simultaneous-use': payload.usersPerDevice,
+							'rate-limit': payload.bandwidth,
+							'session-timeout': String(payload.duration),
 						}
 						: p
 				)
