@@ -195,48 +195,57 @@ describe('ProfileScreen', () => {
 		expect(mockSetUser).toHaveBeenCalled();
 	});
 
-	test('a mismatched new password never reaches the API', async () => {
-		const { getAllByText, getAllByPlaceholderText } = render(<ProfileScreen />);
-		await waitFor(() => expect(mockFetchProfile).toHaveBeenCalled());
+	test(
+		'a mismatched new password never reaches the API',
+		async () => {
+			const { getAllByText, getAllByPlaceholderText } = render(<ProfileScreen />);
+			await waitFor(() => expect(mockFetchProfile).toHaveBeenCalled());
 
-		// Four password fields share the mask placeholder: current, new, confirm, delete.
-		const pw = getAllByPlaceholderText('••••••••');
-		await userEvent.type(pw[0], 'old-password');
-		await userEvent.type(pw[1], 'new-password');
-		await userEvent.type(pw[2], 'different');
+			// Four password fields share the mask placeholder: current, new, confirm, delete.
+			const pw = getAllByPlaceholderText('••••••••');
+			await userEvent.type(pw[0], 'old-password');
+			await userEvent.type(pw[1], 'new-password');
+			await userEvent.type(pw[2], 'different');
 
-		await userEvent.press(getAllByText('Update password')[0]);
+			await userEvent.press(getAllByText('Update password')[0]);
 
-		await waitFor(() => expect(mockUpdatePassword).not.toHaveBeenCalled());
-	});
+			await waitFor(() => expect(mockUpdatePassword).not.toHaveBeenCalled());
+		},
+		// `userEvent.type` is per-character and this form has three masked fields.
+		15000
+	);
 
-	test('a matched password pair is submitted with its confirmation', async () => {
-		mockUpdatePassword.mockResolvedValue({
-			ok: true,
-			json: async () => ({ message: 'Password updated.' }),
-		});
+	test(
+		'a matched password pair is submitted with its confirmation',
+		async () => {
+			mockUpdatePassword.mockResolvedValue({
+				ok: true,
+				json: async () => ({ message: 'Password updated.' }),
+			});
 
-		const { getAllByText, getAllByPlaceholderText } = render(<ProfileScreen />);
-		await waitFor(() => expect(mockFetchProfile).toHaveBeenCalled());
+			const { getAllByText, getAllByPlaceholderText } = render(<ProfileScreen />);
+			await waitFor(() => expect(mockFetchProfile).toHaveBeenCalled());
 
-		const pw = getAllByPlaceholderText('••••••••');
-		await userEvent.type(pw[0], 'old-password');
-		await userEvent.type(pw[1], 'new-password');
-		await userEvent.type(pw[2], 'new-password');
+			const pw = getAllByPlaceholderText('••••••••');
+			await userEvent.type(pw[0], 'old-password');
+			await userEvent.type(pw[1], 'new-password');
+			await userEvent.type(pw[2], 'new-password');
 
-		await userEvent.press(getAllByText('Update password')[0]);
+			await userEvent.press(getAllByText('Update password')[0]);
 
-		await waitFor(() =>
-			expect(mockUpdatePassword).toHaveBeenCalledWith(
-				{
-					current_password: 'old-password',
-					password: 'new-password',
-					password_confirmation: 'new-password',
-				},
-				'token'
-			)
-		);
-	});
+			await waitFor(() =>
+				expect(mockUpdatePassword).toHaveBeenCalledWith(
+					{
+						current_password: 'old-password',
+						password: 'new-password',
+						password_confirmation: 'new-password',
+					},
+					'token'
+				)
+			);
+		},
+		15000
+	);
 
 	test('deleting confirms first, then logs out', async () => {
 		mockDelete.mockResolvedValue({

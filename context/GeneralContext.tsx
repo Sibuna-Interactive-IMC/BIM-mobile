@@ -6,12 +6,15 @@ import { parseApiError, registerAuthCallbacks } from '@/helpers/api';
 import { getApiData } from '@/helpers/apiResponse';
 import * as AuthService from '@/services/AuthService';
 import { fetchDashboard, fetchUser } from '@/services/UserService';
+import * as InboxService from '@/services/InboxService';
+import * as PushService from '@/services/PushService';
 import {
 	AuthSession,
 	DashboardSummary,
 	GetDashboardResponse,
 	GetMeResponse,
 	headerOptions,
+	InboxNotification,
 	langCode,
 	LoginResponse,
 	notifications,
@@ -374,6 +377,10 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 					// We don't await the result or check success/failure for UI purposes
 					// The user wants to be logged out regardless of server status.
 					await AuthService.logout(String(token)).catch(() => { });
+					// Stop pushes for this install before the token is dropped; the
+					// token identifies the install and would otherwise keep receiving
+					// the next user's notifications.
+					await PushService.unregisterPushDevice(String(token)).catch(() => { });
 				}
 			} catch {
 				// Ignore token lookup errors
@@ -1427,8 +1434,45 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 	};
 
 	const fetchNotifications = async () => {
-		const fetched: notifications[] = [];
-		setNotifications(fetched);
+		try {
+			const token = await SecureStore.getItemAsync('auth_token');
+			if (!token) {
+				setNotifications([]);
+				return;
+			}
+
+			const response = await InboxService.fetchInbox(String(token), {
+				perPage: 50,
+			});
+			if (!response.ok) return;
+
+			const body = await response.json().catch(() => null);
+			const rows =
+				getApiData<{ notifications?: InboxNotification[] }>(body)
+					?.notifications ?? [];
+
+			setNotifications(
+				rows.map((row) => {
+					const createdAt = row.created_at ? new Date(row.created_at) : new Date();
+					return {
+						id: row.id,
+						from: row.subject?.type ?? '',
+						to: '',
+						type:
+							row.type === 'alert' || row.type === 'reminder'
+								? row.type
+								: 'message',
+						title: row.title,
+						message: row.body,
+						isRead: row.read,
+						createdAt,
+						updatedAt: createdAt,
+					};
+				})
+			);
+		} catch (error) {
+			console.warn('[GeneralContext] fetchNotifications failed', error);
+		}
 	};
 
 	const retryRefreshWrapper = useCallback(async () => {

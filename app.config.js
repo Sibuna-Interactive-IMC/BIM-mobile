@@ -47,6 +47,8 @@ export default ({ config }) => {
         "android": {
             icon: './assets/images/icon.png',
             "package": "com.muganwas.BIMmobile",
+            // expo-notifications mints FCM device tokens from this config.
+            googleServicesFile: './google-services.json',
             "adaptiveIcon": {
                 "foregroundImage": "./assets/images/adaptive-icon.png",
                 "backgroundColor": "#ffffff"
@@ -99,6 +101,16 @@ export default ({ config }) => {
                 {
                     photosPermission:
                         'The app accesses your photos to let you share them with your friends.',
+                },
+            ],
+            [
+                'expo-notifications',
+                {
+                    // White silhouette for the Android status bar, generated from
+                    // the BIM wordmark by scripts/make-notification-icon.ps1.
+                    icon: './assets/images/notification-icon.png',
+                    color: '#EE8438',
+                    defaultChannel: 'default',
                 },
             ],
         ],

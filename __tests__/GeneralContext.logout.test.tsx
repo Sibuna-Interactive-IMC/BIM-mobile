@@ -47,6 +47,7 @@ jest.mock('@/services/AuthService', () => ({
 jest.mock('@/helpers/api', () => ({
   registerAuthCallbacks: jest.fn(),
   parseApiError: jest.fn(),
+  apiFetch: jest.fn(async () => ({ ok: false, status: 401, json: async () => ({}) })),
 }));
 jest.mock('@/helpers', () => ({
     delay: jest.fn(() => Promise.resolve()),

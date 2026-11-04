@@ -194,3 +194,12 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// expo-notifications mints FCM device tokens from the Firebase config. The file
+// is gitignored: copy google-services.json into android/app (CI writes it from
+// the GOOGLE_SERVICES_JSON secret) - without it push registration is skipped.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    logger.warn("android/app/google-services.json is missing - push notifications will be disabled in this build")
+}

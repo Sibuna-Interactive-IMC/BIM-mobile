@@ -20,6 +20,9 @@ export function ThemedSwitch({
     );
     const disabledTrackColor = useThemeColor({}, 'inputBorder');
     const disabledThumbColor = useThemeColor({}, 'lightGrey');
+    // The knob takes the track colour unless a caller asks for something else,
+    // so an "on" switch reads as one solid brand-coloured control.
+    const enabledThumbColor = thumbColor ?? enabledTrackColor;
     return (
         <Switch
             trackColor={{
@@ -28,7 +31,13 @@ export function ThemedSwitch({
                 ...trackColor
 
             }}
-            thumbColor={rest.value ? thumbColor : disabledThumbColor}
+            thumbColor={
+                rest.disabled
+                    ? disabledThumbColor
+                    : rest.value
+                      ? enabledThumbColor
+                      : disabledThumbColor
+            }
             {...rest}
         />
     );

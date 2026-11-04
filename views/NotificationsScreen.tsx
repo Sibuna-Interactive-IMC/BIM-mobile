@@ -8,11 +8,22 @@ import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
+import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 export default function NotificationsScreen() {
 	useTrackHistory('/(authenticated)/notifications');
-	const { notifications, language } = useGeneral(); // Get notifications from context
+	const { notifications, language, fetchNotifications } = useGeneral(); // Get notifications from context
+	const [refreshing, setRefreshing] = useState(false);
+
+	const handleRefresh = async () => {
+		setRefreshing(true);
+		try {
+			await fetchNotifications();
+		} finally {
+			setRefreshing(false);
+		}
+	};
 
 	const bg = useThemeColor({}, 'background');
 	const headers = useThemeColor({}, 'headers');
@@ -28,6 +39,8 @@ export default function NotificationsScreen() {
 				dark: bg,
 			}}
 			containerStyle={{ flex: 1 }}
+			onRefresh={handleRefresh}
+			refreshing={refreshing}
 			contentStyle={{ paddingHorizontal: 10 }}
 		>
 			<TileContainer
@@ -77,7 +90,7 @@ export default function NotificationsScreen() {
 						lightColor={textColor}
 						darkColor={textColor}
 					>
-						{translations[language].categories.notifications['noNotifications']}
+						{translations[language].categories.notifications['no.notifications']}
 					</ThemedText>
 				)}
 			</TileContainer>

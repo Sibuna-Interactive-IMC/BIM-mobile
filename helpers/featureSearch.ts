@@ -132,6 +132,20 @@ export const appFeatures: AppFeature[] = [
 		keywords: ['account', 'password', 'avatar', 'personal details'],
 	},
 	{
+		id: 'settings',
+		path: '/(authenticated)/settings',
+		icon: 'settings',
+		audience: 'everyone',
+		keywords: [
+			'preferences',
+			'push',
+			'email',
+			'sms',
+			'channels',
+			'notification settings',
+		],
+	},
+	{
 		id: 'notifications',
 		path: '/(authenticated)/notifications',
 		icon: 'notifications.outline',

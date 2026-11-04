@@ -81,20 +81,64 @@ Two workflows live in `.github/workflows`:
 
 2. **Repository secrets** (Settings → Secrets and variables → Actions):
 
-   | Secret | Value |
-   | --- | --- |
-   | `ANDROID_KEYSTORE_BASE64` | `base64 -w0 upload.keystore` |
-   | `ANDROID_KEYSTORE_PASSWORD` | keystore password |
-   | `ANDROID_KEY_ALIAS` | `upload` |
-   | `ANDROID_KEY_PASSWORD` | key password |
-   | `PLAY_SERVICE_ACCOUNT_JSON` | raw JSON key of the Play Developer API service account |
+   | Secret | Encoding | Value |
+   | --- | --- | --- |
+   | `ANDROID_KEYSTORE_BASE64` | base64 | `base64 -w0 upload.keystore` |
+   | `ANDROID_KEYSTORE_PASSWORD` | plain | keystore password |
+   | `ANDROID_KEY_ALIAS` | plain | `upload` |
+   | `ANDROID_KEY_PASSWORD` | plain | key password |
+   | `PLAY_SERVICE_ACCOUNT_JSON` | plain JSON | the whole `*.json` key file from step 3, pasted as-is |
+   | `GOOGLE_SERVICES_JSON` | base64 or plain JSON | `base64 -w0 google-services.json` — FCM config, required for push in release builds |
 
-3. **Google Play API access** — enable *Google Play Android Developer API* in
-   Google Cloud, create a service account, then in Play Console → *Setup → API
-   access* link that account and grant it release permissions for the tracks you
-   deploy to.
+   Only the two file blobs are base64 — `ANDROID_KEYSTORE_BASE64` because the
+   workflow decodes it back to a keystore, and `GOOGLE_SERVICES_JSON` by
+   convention (the workflow also accepts the raw file and validates it before
+   the build). The service account stays **raw JSON**: the Play upload action
+   reads it as plain text (`serviceAccountJsonPlainText`), so a base64 value
+   there would fail auth.
 
-4. **Optional repository variables**: `API_BASE_URL`, `COUNTRY_CODE`,
+3. **Play service account** — this produces the `PLAY_SERVICE_ACCOUNT_JSON`
+   value. It is a server credential that can publish to your listing, so treat
+   it like a password and never commit it (the local copy lives in the
+   gitignored `.env`):
+
+   a. Google Cloud Console → the project that will own the uploader (the app's
+      Firebase project works) → **IAM & Admin → Service accounts → Create
+      service account**, e.g. `play-publisher`. No Cloud IAM roles are needed —
+      Play permissions come from Play Console in step (d).
+   b. Open the account → **Keys → Add key → Create new key → JSON**. The browser
+      downloads `<project>-<key id>.json`; that file *is* the secret.
+   c. **APIs & Services → Library → Google Play Android Developer API → Enable**
+      for that project.
+   d. Play Console → **Setup → API access** → link the Cloud project, then grant
+      the service account release permissions for the app (*Users and
+      permissions* → the account → *App permissions*): at minimum **Release to
+      testing tracks**, plus **Release to production** if CI publishes there.
+   e. Copy the downloaded JSON verbatim into the `PLAY_SERVICE_ACCOUNT_JSON`
+      secret (multi-line is fine).
+
+   If the key leaks, delete it in Cloud Console and repeat (b)–(e).
+
+4. **Encoding the blob secrets** (Git Bash):
+
+   ```bash
+   base64 -w0 upload.keystore; echo        # ANDROID_KEYSTORE_BASE64
+   base64 -w0 google-services.json; echo   # GOOGLE_SERVICES_JSON
+   ```
+
+   PowerShell — `[Convert]` is .NET, so this does not run in Git Bash:
+
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path 'upload.keystore')))
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path 'google-services.json')))
+   ```
+
+   Add `| clip` (bash) or `| Set-Clipboard` (PowerShell) to copy the line
+   without selecting it. A machine that already builds locally can read
+   `ANDROID_KEYSTORE_BASE64` and `PLAY_SERVICE_ACCOUNT_JSON` straight out of the
+   gitignored `.env`.
+
+5. **Optional repository variables**: `API_BASE_URL`, `COUNTRY_CODE`,
    `COUNTRY_NAME`, `PHONE_NUMBER_LENGTH`, `VERSION_CODE_OFFSET`,
    `RELEASE_TRACK` and `RELEASE_STATUS`. Defaults match production, with the
    release going to `internal` as a **draft**.
@@ -133,4 +177,18 @@ $env:BIM_UPLOAD_STORE_FILE='upload.keystore'; $env:BIM_UPLOAD_STORE_PASSWORD='YO
 $env:BIM_UPLOAD_KEY_ALIAS='upload'; $env:BIM_UPLOAD_KEY_PASSWORD='YOUR_KEY_PASSWORD'
 cd android; .\gradlew.bat bundleRelease
 ```
+
+## Push notifications
+
+The app registers each install with `POST /push-devices` and the backend fans
+out over FCM.
+
+- **Android** needs the Firebase config at `android/app/google-services.json`.
+  It is gitignored, so copy `google-services.json` there after cloning; without
+  it the `google-services` plugin is skipped and the build ships without push.
+  The release workflow writes the file from the `GOOGLE_SERVICES_JSON` secret.
+- **iOS** needs the *Push Notifications* capability and an APNs key uploaded to
+  the Firebase project.
+- The notification icon is `assets/images/notification-icon.png`, generated from
+  the BIM wordmark by `scripts/make-notification-icon.ps1`.
 

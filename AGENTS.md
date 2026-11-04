@@ -140,6 +140,35 @@ Icons are restricted to `IconSymbolName` — the keys of `MAPPING` in
 - Gate destructive or role-specific UI with the helpers in
   `helpers/permissions.ts`; the API is the real enforcement point.
 
+## Push notifications
+
+The backend fans out over FCM, so the app registers its own device token with
+`POST /push-devices`; it never talks to Expo's push service.
+
+- `hooks/usePushNotifications.ts` is mounted by
+  `app/(authenticated)/_layout.tsx`. It asks for the OS permission, opens the
+  Android `default` channel, posts the device token, re-posts it when the token
+  rolls, and on a tap opens the route in the payload's `link.app`
+  (`helpers/pushNotifications.ts` resolves it; unknown or stale links land on
+  `/(authenticated)/notifications`).
+- `GeneralContext.handleLogout` calls `DELETE /push-devices/{id}` before the
+  bearer token is dropped. The token identifies the install, so skipping this
+  leaves the next user receiving the previous user's pushes.
+- The header bell and `views/NotificationsScreen.tsx` read `GET /inbox`, mapped
+  into the `notifications` state by `GeneralContext.fetchNotifications`. `/inbox`
+  is the caller's own approval/decision feed — `/notifications` is the
+  paid-customer transaction log and is a different list.
+- The per-category channel switches (`GET`/`PATCH /inbox/settings`) live on the
+  Settings screen (`views/SettingsScreen.tsx`), reachable from the drawer and
+  from the avatar menu in the header. `locked` rows (the in-app inbox) render
+  disabled, and a failed PATCH rolls the switch back.
+- Android builds need `android/app/google-services.json` (a gitignored copy of
+  the Firebase config) or the gradle plugin is skipped and the app ships without
+  FCM; the release workflow writes it from the `GOOGLE_SERVICES_JSON` secret
+  (base64, or the raw file — both are accepted). iOS still needs the Push
+  Notifications capability (`aps-environment`) and an APNs key in the Firebase
+  project.
+
 ## Validation
 
 - `npm test` (Jest) and `npm run lint` (Expo ESLint).

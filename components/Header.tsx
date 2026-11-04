@@ -885,6 +885,32 @@ export default function Header({
 								justifyContent: 'flex-start',
 							}}
 							onPress={() => {
+								router.push('/(authenticated)/settings');
+								setSelectedOption(undefined);
+							}}
+						>
+							<IconSymbol
+								name='settings'
+								size={18}
+								color={textColor}
+								style={{ marginRight: 10 }}
+							/>
+							<ThemedText
+								style={{
+									color: textColor,
+									fontSize: fontSize['text.medium'],
+								}}
+							>
+								{translations[language].categories.navigation['settings']}
+							</ThemedText>
+						</TouchableOpacity>
+						<TouchableOpacity
+							style={{
+								flexDirection: 'row',
+								alignItems: 'center',
+								justifyContent: 'flex-start',
+							}}
+							onPress={() => {
 								setSelectedOption(undefined);
 								handleLogout();
 							}}

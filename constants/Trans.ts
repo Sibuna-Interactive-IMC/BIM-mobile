@@ -210,6 +210,9 @@ const translations: Translations = {
 				'profile.description': 'Personal details, password and avatar.',
 				'notifications.label': 'Notifications',
 				'notifications.description': 'Alerts and account activity.',
+				'settings.label': 'Settings',
+				'settings.description':
+					'Notification channels and app preferences.',
 				'business-analytics.label': 'Business Analytics',
 				'business-analytics.description':
 					'Collections, withdrawals and charges across the whole platform.',
@@ -238,6 +241,9 @@ const translations: Translations = {
 				new: 'New',
 				'no.notifications': 'No new notifications available',
 				seeAll: 'View All Notifications',
+				channelName: 'Account notifications',
+				channelDescription:
+					'Approval requests, decisions and disbursement notices.',
 			},
 			routers: {
 				id: 'ID',
@@ -1485,6 +1491,22 @@ const translations: Translations = {
 				deleted: 'Your account was deleted.',
 				deleteFailed: 'Could not delete your account.',
 				passwordLabel: 'Password',
+			},
+			settings: {
+				title: 'Settings',
+				description:
+					'How this account keeps you informed, and what the app should notify you about.',
+				notifications: 'Notification preferences',
+				notificationsDesc:
+					'Choose how each kind of update reaches you. The in-app list always keeps a copy.',
+				notificationsPushHint:
+					'Push switches only take effect while notifications are allowed for BIM-mobile in your device settings.',
+				notificationsLoading: 'Loading your preferences…',
+				notificationsEmpty: 'No notification categories yet.',
+				notificationsEmail: 'Email',
+				notificationsPush: 'Push',
+				notificationsBroadcast: 'SMS',
+				saveFailed: 'Could not save that preference.',
 			},
 			withdraw: {
 				title: 'Withdraw',

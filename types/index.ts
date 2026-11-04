@@ -387,6 +387,89 @@ export interface notifications {
 	updatedAt: Date;
 }
 
+/** Push installs are registered per platform (`POST /push-devices`). */
+export type PushPlatform = 'android' | 'ios' | 'web';
+
+/** A row of `GET /push-devices` — one install that receives push for this login. */
+export interface PushDevice {
+	id: string;
+	platform: PushPlatform;
+	device_id: string | null;
+	app_version: string | null;
+	locale: string | null;
+	is_active: boolean;
+	last_seen_at: string | null;
+	created_at: string | null;
+}
+
+/** Body of `POST /push-devices`; the FCM token is the upsert key. */
+export interface RegisterPushDevicePayload {
+	token: string;
+	platform: PushPlatform;
+	device_id?: string;
+	app_version?: string;
+	locale?: string;
+}
+
+/**
+ * A row of `GET /inbox` — the signed-in user's own feed (approval requests,
+ * decisions, disbursement notices). Not the same as `/notifications`, which
+ * lists paid customer transactions.
+ */
+export interface InboxNotification {
+	id: string;
+	type: string;
+	category: string;
+	category_label?: string;
+	title: string;
+	body: string;
+	subject?: {
+		type?: string | null;
+		id?: string | null;
+	} | null;
+	payload?: Record<string, unknown> | null;
+	link?: {
+		web?: string | null;
+		app?: string | null;
+	} | null;
+	read: boolean;
+	read_at?: string | null;
+	created_at?: string | null;
+}
+
+/** Channels a notification preference can target (`PATCH /inbox/settings`). */
+export type NotificationChannelKey = 'broadcast' | 'mail' | 'fcm';
+
+/** One switch of the category × channel matrix. */
+export interface NotificationChannelSetting {
+	label: string;
+	enabled: boolean;
+	/** The in-app inbox is always on, so its switch cannot be turned off. */
+	locked: boolean;
+}
+
+export interface NotificationCategorySetting {
+	key: string;
+	label: string;
+	channels: Record<string, NotificationChannelSetting>;
+}
+
+/** `GET /inbox/settings` — the effective value of every notification switch. */
+export interface InboxSettings {
+	categories: NotificationCategorySetting[];
+	channels: Record<string, string>;
+	available?: {
+		push?: boolean;
+	};
+}
+
+/** Body entry of `PATCH /inbox/settings`. */
+export interface InboxSettingsPreference {
+	category: string;
+	channel: NotificationChannelKey;
+	enabled: boolean;
+}
+
 export interface dayPurchase {
 	date: Date;
 	day: string;

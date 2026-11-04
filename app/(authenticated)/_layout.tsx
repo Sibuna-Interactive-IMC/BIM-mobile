@@ -16,6 +16,7 @@ import { useGeneral } from '@/context/GeneralContext';
 import { SecurityProvider } from '@/context/SecurityContext';
 import { TransactionProvider } from '@/context/TransactionContext';
 import { isPlatformAdmin } from '@/helpers/permissions';
+import usePushNotifications from '@/hooks/usePushNotifications';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
 // use a runtime require to access DrawerContentScrollView to avoid missing type exports
@@ -50,6 +51,7 @@ function CustomDrawerContent(props: any) {
 					: []),
 				'connector',
 				'documents',
+				'settings',
 			]),
 		[isAdmin]
 	);
@@ -138,6 +140,9 @@ function CustomDrawerContent(props: any) {
 						break;
 					case 'documents':
 						icon = <IconSymbol size={24} name='documents' color={iconColor} />;
+						break;
+					case 'settings':
+						icon = <IconSymbol size={24} name='settings' color={iconColor} />;
 						break;
 					default:
 						icon = null;
@@ -231,6 +236,9 @@ export default function DrawerLayout() {
 
 	const router = useRouter();
 
+	// Registers this install for push and opens the screen a tapped push points at.
+	usePushNotifications();
+
 	// Redirect to login only after auth verification is complete and no token is present.
 	// During startup, verifyingAuth is true while the token is loaded from SecureStore
 	// and verified with the backend — we must wait for this to finish before deciding.
@@ -311,6 +319,7 @@ export default function DrawerLayout() {
 				<Drawer.Screen name='documents' />
 				<Drawer.Screen name='profile' />
 				<Drawer.Screen name='notifications' />
+				<Drawer.Screen name='settings' />
 				{/* Add more drawer screens as needed */}
 			</Drawer>
 		</SecurityProvider>
