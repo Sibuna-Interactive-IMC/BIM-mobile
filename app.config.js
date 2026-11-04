@@ -80,6 +80,12 @@ export default ({ config }) => {
                     },
                     android: {
                         "networkSecurityConfig": './network_security_config.xml',
+                        // Google Play requires API 36 for new uploads; keep this
+                        // in sync with android/gradle.properties so a prebuild
+                        // cannot silently drop back to Expo SDK 53's API 35.
+                        compileSdkVersion: 36,
+                        targetSdkVersion: 36,
+                        buildToolsVersion: '36.0.0',
                     }
                 },
             ],

@@ -179,6 +179,11 @@ The backend fans out over FCM, so the app registers its own device token with
   (base64, or the raw file — both are accepted). iOS still needs the Push
   Notifications capability (`aps-environment`) and an APNs key in the Firebase
   project.
+- Android builds target API 36 (Android 16) because Play rejects lower targets.
+  Expo SDK 53's catalog defaults to 35, so `android/gradle.properties` pins
+  `android.compileSdkVersion` / `android.targetSdkVersion` /
+  `android.buildToolsVersion` and `app.config.js` mirrors them through
+  `expo-build-properties`; change the two together.
 
 ## Validation
 
