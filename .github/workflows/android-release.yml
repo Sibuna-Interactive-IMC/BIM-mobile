@@ -97,15 +97,35 @@ jobs:
             echo "::warning::GOOGLE_SERVICES_JSON is not set — this build ships without push notifications"
             exit 0
           fi
-          printf '%s' "$GOOGLE_SERVICES_JSON" | tr -d '\r' > /tmp/google-services.secret
-          if [ "$(head -c 1 /tmp/google-services.secret)" = "{" ]; then
-            # The secret was pasted as the raw file.
-            cp /tmp/google-services.secret android/app/google-services.json
-          else
-            # The secret was pasted as base64 (the default in the docs).
-            base64 --decode /tmp/google-services.secret > android/app/google-services.json
-          fi
-          node -e "JSON.parse(require('fs').readFileSync('android/app/google-services.json', 'utf8')); console.log('google-services.json is valid JSON')"
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const isFirebaseConfig = (contents) => {
+            try {
+              const config = JSON.parse(contents);
+              return config !== null &&
+                typeof config === 'object' &&
+                config.project_info !== null &&
+                typeof config.project_info === 'object' &&
+                Array.isArray(config.client);
+            } catch {
+              return false;
+            }
+          };
+
+          const raw = process.env.GOOGLE_SERVICES_JSON;
+          const decoded = Buffer.from(raw, 'base64').toString('utf8');
+          const contents = isFirebaseConfig(raw) ? raw :
+            isFirebaseConfig(decoded) ? decoded : null;
+
+          if (contents === null) {
+            console.error('::error::GOOGLE_SERVICES_JSON must contain the complete google-services.json file as raw JSON or base64-encoded JSON.');
+            process.exit(1);
+          }
+
+          fs.writeFileSync('android/app/google-services.json', contents);
+          console.log('google-services.json is valid Firebase config');
+          NODE
 
       - name: Ensure required NDK
         run: |
