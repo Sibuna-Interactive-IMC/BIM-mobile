@@ -1,14 +1,14 @@
 /// <reference types="jest" />
-import { render, waitFor } from '@testing-library/react-native';
+import {
+	render,
+	userEvent,
+	waitFor,
+	type RenderResult,
+} from '@testing-library/react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
 import TransactionsScreen from '@/views/TransactionsScreen';
-
-// `userEvent` ships in this version's runtime but is missing from its typings.
-const { userEvent } = jest.requireActual<{
-	userEvent: { press: (element: unknown) => Promise<void> };
-}>('@testing-library/react-native');
 
 jest.mock('@/constants/API', () => ({ apiBaseUrl: 'https://api.example' }));
 jest.mock('react-native-safe-area-context', () => ({
@@ -62,7 +62,9 @@ const transactions = [
 ];
 
 /** Flattened style of the filter section that owns the dropdowns. */
-const filterTileStyles = (UNSAFE_getAllByProps: (props: object) => any[]) =>
+const filterTileStyles = (
+	UNSAFE_getAllByProps: RenderResult['UNSAFE_getAllByProps']
+) =>
 	UNSAFE_getAllByProps({ id: 'transactions-filters-tile' }).map((node) =>
 		StyleSheet.flatten(node.props.style)
 	);
