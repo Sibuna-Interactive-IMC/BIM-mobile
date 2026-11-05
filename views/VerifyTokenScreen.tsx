@@ -247,6 +247,8 @@ export default function VerifyTokenScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='number-pad'
+									returnKeyType='done'
+									onSubmitEditing={handleOnVerifyCode}
 									onFocus={() => setFocusedInput('code')}
 									onBlur={() => setFocusedInput(null)}
 								/>

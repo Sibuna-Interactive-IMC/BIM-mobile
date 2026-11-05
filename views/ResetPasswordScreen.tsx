@@ -122,6 +122,8 @@ export default function ResetPasswordScreen() {
 							placeholder={translations[language].categories.auth.email}
 							placeholderTextColor={textColor}
 							keyboardType='email-address'
+							returnKeyType='send'
+							onSubmitEditing={handleSendReset}
 							containerStyle={{ width: '100%' }}
 						/>
 

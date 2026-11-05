@@ -312,6 +312,8 @@ export default function LoginScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='default'
+									returnKeyType='go'
+									onSubmitEditing={handleOnLogin}
 									onFocus={() => setFocusedInput('password')}
 									onBlur={() => setFocusedInput(null)}
 								/>

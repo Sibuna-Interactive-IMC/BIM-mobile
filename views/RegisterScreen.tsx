@@ -470,6 +470,8 @@ export default function RegisterScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='default'
+									returnKeyType='go'
+									onSubmitEditing={handleOnSignUp}
 									onFocus={() => setFocusedInput('confirmPassword')}
 									onBlur={() => setFocusedInput(null)}
 								/>

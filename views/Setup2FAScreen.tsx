@@ -305,6 +305,10 @@ export default function Setup2FAScreen() {
 						}
 						placeholderTextColor={textColor}
 						keyboardType='number-pad'
+						returnKeyType='done'
+						onSubmitEditing={() => {
+							if (code.trim() && !loading) handleOnSetupTotp();
+						}}
 					/>
 
 					<ThemedView style={{ gap: 12, width: '100%', marginTop: 20 }}>
