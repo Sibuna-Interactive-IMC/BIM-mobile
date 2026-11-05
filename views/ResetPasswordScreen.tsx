@@ -123,7 +123,10 @@ export default function ResetPasswordScreen() {
 							placeholderTextColor={textColor}
 							keyboardType='email-address'
 							returnKeyType='send'
-							onSubmitEditing={handleSendReset}
+							onSubmitEditing={() => {
+								// Mirror the button, which is disabled until something is typed.
+								if (email.length > 0) handleSendReset();
+							}}
 							containerStyle={{ width: '100%' }}
 						/>
 

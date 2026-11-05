@@ -61,6 +61,7 @@ export default function LoginScreen() {
 	const buttonError = useThemeColor({}, 'buttonError');
 	const authButtonText = useThemeColor({}, 'authButtonText');
 	const scrollRef = useRef<any>(null);
+	const passwordInputRef = useRef<TextInput>(null);
 	const { handleAuthentication, language } = useGeneral(); // Get authenticate function from context
 	const [phoneNumber, setPhoneNumber] = useState('');
 	const [password, setPassword] = useState('');
@@ -289,10 +290,14 @@ export default function LoginScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='number-pad'
+									returnKeyType='next'
+									submitBehavior='submit'
+									onSubmitEditing={() => passwordInputRef.current?.focus()}
 									onFocus={() => setFocusedInput('phone')}
 									onBlur={() => setFocusedInput(null)}
 								/>
 								<ThemedInput
+									ref={passwordInputRef}
 									style={[
 										styles.formInput,
 										{
