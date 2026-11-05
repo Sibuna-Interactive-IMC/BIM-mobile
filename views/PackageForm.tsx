@@ -246,6 +246,7 @@ export default function PackageForm({
 							<ScrollView
 								horizontal
 								showsHorizontalScrollIndicator={false}
+								keyboardShouldPersistTaps='handled'
 								contentContainerStyle={styles.planRow}
 							>
 								{profiles.map((profile) => {

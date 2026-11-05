@@ -117,6 +117,9 @@ export default function ParallaxScrollView({
 				scrollIndicatorInsets={{ bottom }}
 				contentContainerStyle={{ paddingBottom: bottom }}
 				nestedScrollEnabled={true}
+				// Let buttons inside the form receive the first tap while the
+				// keyboard is open; taps on empty space still dismiss it.
+				keyboardShouldPersistTaps='handled'
 				refreshControl={
 					onRefresh ? (
 						<RefreshControl

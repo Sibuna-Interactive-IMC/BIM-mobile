@@ -1,10 +1,11 @@
-import { ReactElement, useEffect, useRef, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import {
 	Animated,
 	BackHandler,
 	Keyboard,
 	Modal,
 	Platform,
+	Pressable,
 	ScrollView,
 	ScrollViewProps,
 	StyleSheet,
@@ -14,9 +15,99 @@ import {
 	useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import translations from '@/constants/Trans';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Portal } from './Portal';
 
 export type contentPosition = 'top' | 'bottom' | 'center';
+
+/**
+ * Radius of the card an overlay form sits in. The clipping frame around a
+ * scrollable overlay uses the same value, so the corners stay rounded however
+ * far the form is scrolled.
+ */
+const CARD_RADIUS = 10;
+
+/** Height reserved above a card for the close button, so it never overlaps content. */
+const CLOSE_BUTTON_BAND = 38;
+
+/**
+ * Keyboard space an overlay has to reserve for itself.
+ *
+ * Edge-to-edge Android (and iOS) keep the window at full height while the
+ * keyboard is up, so the overlay pads its bottom by the keyboard height. A
+ * platform that already shrank the window for the keyboard reports a smaller
+ * `windowHeight`; padding there as well would leave a screen-sized gap under
+ * the content, so the lift drops to zero.
+ *
+ * A centred card only lifts as far as it has to: reserving the whole keyboard
+ * height would re-centre a short form high above the keyboard. The lift is the
+ * padding that puts the card's bottom `keyboardGap` above the keyboard, and
+ * zero when the card already clears it.
+ */
+export function overlayKeyboardGeometry({
+	keyboardVisible,
+	keyboardHeight,
+	windowHeight,
+	maxWindowHeight,
+	insets,
+	verticalPadding,
+	keyboardGap,
+	autoKeyboardInset,
+	position = 'center',
+	contentHeight = 0,
+}: {
+	keyboardVisible: boolean;
+	keyboardHeight: number;
+	windowHeight: number;
+	maxWindowHeight: number;
+	insets: { top: number; bottom: number };
+	verticalPadding: number;
+	keyboardGap: number;
+	autoKeyboardInset: boolean;
+	position?: contentPosition;
+	contentHeight?: number;
+}) {
+	const windowShrankBy = Math.max(0, maxWindowHeight - windowHeight);
+	const osResizedForKeyboard =
+		keyboardVisible &&
+		windowShrankBy > 24 &&
+		windowShrankBy >= keyboardHeight * 0.5;
+	const keyboardInset =
+		keyboardVisible && autoKeyboardInset && !osResizedForKeyboard
+			? keyboardHeight
+			: 0;
+	// Breathing room between the content and the keyboard.
+	const clearance = keyboardInset + Math.max(0, keyboardGap);
+	// A centred card is lifted by padding: with padding P the card's bottom sits
+	// at (windowHeight - P + height) / 2, so it clears the keyboard when
+	// P >= height + 2 * clearance - windowHeight. Bottom sheets always reserve
+	// the whole keyboard.
+	const keyboardLift =
+		keyboardInset === 0
+			? 0
+			: position === 'center' && contentHeight > 0
+				? Math.min(
+						clearance,
+						Math.max(
+							0,
+							contentHeight + 2 * clearance - windowHeight
+						)
+					)
+				: clearance;
+	// Content also stays clear of the top edge.
+	const maxContentHeight = Math.max(
+		0,
+		windowHeight -
+			insets.top -
+			insets.bottom -
+			verticalPadding * 2 -
+			keyboardInset -
+			24
+	);
+	return { keyboardInset, keyboardLift, maxContentHeight, osResizedForKeyboard };
+}
 
 export default function OverlayContainer({
 	showOverlay,
@@ -34,13 +125,13 @@ export default function OverlayContainer({
 	autoKeyboardInset = true,
 	bottomPadding = 12,
 	getScrollRef,
-	centerLiftOnKeyboard = false,
-	centerLiftRatio = 0.6,
 	restoreCenterOnKeyboardHide = true,
 	scrollProps,
 	keyboardGap = 0,
 	autoScrollFocused = true,
 	focusExtraOffset,
+	showCloseButton,
+	closeLabel = translations.en.categories.buttons.close,
 }: {
 	id?: string;
 	showOverlay: boolean;
@@ -60,15 +151,15 @@ export default function OverlayContainer({
 	contentFill?: boolean;
 	/** If true, wrap content in a ScrollView to allow scrolling when content overflows. */
 	scrollable?: boolean;
-	/** If true (default), automatically add keyboard-height inset to bottom padding for the scrollable content. */
+	/** If true (default), reserve the keyboard's height so content stays above it. */
 	autoKeyboardInset?: boolean;
-	/** Additional bottom padding for scrollable content (on top of safe-area inset and optional keyboard height). Default: 12 */
+	/** Additional bottom padding for scrollable content (on top of safe-area inset). Default: 12 */
 	bottomPadding?: number;
 	/** Optional callback to expose the internal ScrollView ref when scrollable is true. */
 	getScrollRef?: (ref: ScrollView | null) => void;
-	/** If true and position is 'center', when the keyboard is visible the container will add bottom padding to visually lift centered content above the keyboard. */
+	/** @deprecated No longer needed: the keyboard inset is always reserved, so centred content lifts itself. */
 	centerLiftOnKeyboard?: boolean;
-	/** The ratio of keyboard height to add as bottom padding when centerLiftOnKeyboard is true. Default 0.6 (60%). */
+	/** @deprecated No longer needed: the keyboard inset is always reserved, so centred content lifts itself. */
 	centerLiftRatio?: number;
 	/** If true (default), when keyboard hides and position is 'center', auto-scroll to top to restore centered layout. */
 	restoreCenterOnKeyboardHide?: boolean;
@@ -78,11 +169,19 @@ export default function OverlayContainer({
 	keyboardGap?: number;
 	/** If true, when keyboard opens and content is scrollable, auto-scroll the currently focused input into view. */
 	autoScrollFocused?: boolean;
-	/** Extra offset in pixels when auto-scrolling the focused input above the keyboard. Defaults to keyboardGap or 32. */
+	/** Extra offset in pixels when auto-scrolling the focused input above the keyboard. Defaults to keyboardGap (or 16). */
 	focusExtraOffset?: number;
+	/** Close (X) button in the content's top-right corner. Defaults to on when `onRequestClose` is given. */
+	showCloseButton?: boolean;
+	/** Accessible name of the close button. */
+	closeLabel?: string;
 }) {
 	const insets = useSafeAreaInsets();
 	const { height: windowHeight } = useWindowDimensions();
+	const cardBackground = useThemeColor({}, 'background');
+	const closeButtonBackground = useThemeColor({}, 'listItemBackground');
+	const closeButtonInk = useThemeColor({}, 'text');
+	const closeVisible = showCloseButton ?? !!onRequestClose;
 	const isAndroid = Platform.OS === 'android';
 	const shouldUseNativeModal =
 		useNativeModal !== undefined ? useNativeModal : !isAndroid;
@@ -194,42 +293,127 @@ export default function OverlayContainer({
 		}
 	}, [kbVisible, scrollable, position, restoreCenterOnKeyboardHide]);
 
-	// When keyboard shows, ensure the currently focused input is scrolled above the keyboard with a gap
+	// Highest window height seen; a smaller one while the keyboard is open means
+	// the OS already shrank the window itself (non edge-to-edge Android).
+	const maxWindowHeightRef = useRef(windowHeight);
 	useEffect(() => {
-		if (!scrollable || !kbVisible || !autoScrollFocused) return;
-		const responder: any =
-			(internalScrollRef.current as any)?.getScrollResponder?.() ??
-			internalScrollRef.current;
-		if (!responder?.scrollResponderScrollNativeHandleToKeyboard) return;
-		const extra = focusExtraOffset ?? keyboardGap ?? 32;
-		const doScroll = () => {
-			try {
-				const TI: any = TextInput as any;
-				let focused: any = null;
-				if (TI?.State && typeof TI.State.currentlyFocusedInput === 'function') {
-					focused = TI.State.currentlyFocusedInput();
-				} else if (typeof TI?.currentlyFocusedInput === 'function') {
-					focused = TI.currentlyFocusedInput();
-				}
-				if (!focused) return;
-				const handle = findNodeHandle(focused);
-				if (!handle) return;
+		if (windowHeight > maxWindowHeightRef.current) {
+			maxWindowHeightRef.current = windowHeight;
+		}
+	}, [windowHeight]);
+
+	// Scroll position/height of the overlay's ScrollView, used to scroll a
+	// focused input into view without relying on screen coordinates.
+	const scrollOffsetRef = useRef(0);
+	const scrollViewportHeightRef = useRef(0);
+
+	const scrollFocusedInputIntoView = useCallback(() => {
+		const scroll = internalScrollRef.current;
+		if (!scroll) return;
+		const TI: any = TextInput as any;
+		const focused: any =
+			TI?.State?.currentlyFocusedInput?.() ??
+			TI?.currentlyFocusedInput?.() ??
+			null;
+		if (!focused) return;
+		const gap = focusExtraOffset ?? (keyboardGap || 16);
+		const apply = (y: number, height: number) => {
+			const viewport = scrollViewportHeightRef.current;
+			if (!viewport) return;
+			const offset = scrollOffsetRef.current;
+			const bottom = y + height + gap;
+			if (bottom > offset + viewport) {
+				scroll.scrollTo({ y: Math.max(0, bottom - viewport), animated: true });
+			} else if (y - gap < offset) {
+				scroll.scrollTo({ y: Math.max(0, y - gap), animated: true });
+			}
+		};
+		const inner =
+			(scroll as any).getInnerViewRef?.() ??
+			(scroll as any).getInnerViewNode?.();
+		try {
+			if (inner && typeof focused.measureLayout === 'function') {
+				focused.measureLayout(
+					inner,
+					(_x: number, y: number, _w: number, height: number) =>
+						apply(y, height),
+					() => {}
+				);
+				return;
+			}
+		} catch { }
+		// Fallback for platforms without instance measurement.
+		try {
+			const responder: any =
+				(scroll as any).getScrollResponder?.() ?? scroll;
+			const handle = findNodeHandle(focused);
+			if (handle != null && responder?.scrollResponderScrollNativeHandleToKeyboard) {
 				responder.scrollResponderScrollNativeHandleToKeyboard(
 					handle,
-					extra,
+					gap,
 					true
 				);
-			} catch { }
-		};
-		// try multiple times to survive differing animation timings
-		doScroll();
-		const t1 = setTimeout(doScroll, Platform.OS === 'ios' ? 220 : 60);
-		const t2 = setTimeout(doScroll, Platform.OS === 'ios' ? 380 : 140);
-		return () => {
-			clearTimeout(t1);
-			clearTimeout(t2);
-		};
-	}, [kbVisible, scrollable, autoScrollFocused, keyboardGap, focusExtraOffset]);
+			}
+		} catch { }
+	}, [focusExtraOffset, keyboardGap]);
+
+	// When the keyboard opens, keep the input being typed into inside the
+	// overlay's scroll viewport (the built-in helper assumes a full-screen
+	// scroll view, so measure locally instead).
+	useEffect(() => {
+		if (!scrollable || !kbVisible || !autoScrollFocused) return;
+		scrollFocusedInputIntoView();
+		const timers = [120, 320, 520].map((delay) =>
+			setTimeout(scrollFocusedInputIntoView, delay)
+		);
+		return () => timers.forEach(clearTimeout);
+	}, [kbVisible, kbHeight, scrollable, autoScrollFocused, scrollFocusedInputIntoView]);
+
+	// Height of the content wrapper, measured so a centred card only lifts as
+	// far as the keyboard requires.
+	const [contentHeight, setContentHeight] = useState(0);
+	const closeButtonShown = closeVisible && !!onRequestClose;
+	const closeBand = closeButtonShown ? CLOSE_BUTTON_BAND : 0;
+
+	// Keyboard geometry. Android runs edge-to-edge, where `adjustResize` no
+	// longer shrinks the window, so the overlay reserves the keyboard height
+	// itself. When the OS did resize the window, reserving it again would leave
+	// a large empty gap between the content and the keyboard.
+	const { keyboardLift, maxContentHeight } = overlayKeyboardGeometry({
+		keyboardVisible: kbVisible,
+		keyboardHeight: kbHeight,
+		windowHeight,
+		maxWindowHeight: maxWindowHeightRef.current,
+		insets,
+		verticalPadding: verticalPadding ?? 0,
+		keyboardGap,
+		autoKeyboardInset,
+		position,
+		contentHeight,
+	});
+
+	// Rendered inside the content wrapper rather than the card so it stays put
+	// while a scrollable form scrolls under it. The wrapper reserves a band above
+	// the card for it, so the X never sits on top of a title row or its spinner.
+	const closeButton = closeButtonShown && onRequestClose ? (
+		<Pressable
+			accessibilityRole='button'
+			accessibilityLabel={closeLabel}
+			onPress={onRequestClose}
+			hitSlop={10}
+			style={({ pressed }) => [
+				styles.closeButton,
+				{
+					backgroundColor: closeButtonBackground,
+					opacity: pressed ? 0.7 : 1,
+				},
+			]}
+		>
+			<IconSymbol name='close' size={18} color={closeButtonInk} />
+		</Pressable>
+	) : null;
+	const contentMaxHeight = Math.max(0, maxContentHeight - closeBand);
+
 	if (!shouldUseNativeModal) {
 		if (!rendered) return null;
 		// derive smoother backdrop and content animations from a single fade value
@@ -258,39 +442,6 @@ export default function OverlayContainer({
 
 		// apply flex if active
 		if (contentFillActive) animatedContentStyle.push({ flex: 1 });
-		const _computedPad =
-			centerLiftOnKeyboard && position === 'center' && kbVisible
-				? Math.round(
-					(kbHeight + insets.bottom) *
-					Math.max(0, Math.min(centerLiftRatio, 1))
-				)
-				: 0;
-		// Clamp to 1-2px visual gap as requested
-		const containerBottomPad = Math.min(2, _computedPad);
-		// Reduce top padding when keyboard is visible so the overlay doesn't appear pushed down
-		const baseVertical = verticalPadding ?? 0;
-		const containerTopPad =
-			centerLiftOnKeyboard && position === 'center' && kbVisible
-				? Math.min(2, baseVertical)
-				: baseVertical;
-
-		// When keyboard is hidden we want the child to be content-sized but capped
-		// to the available screen height (so it can never exceed the screen).
-		const availableScreenHeight = Math.max(
-			0,
-			windowHeight - insets.top - insets.bottom - (verticalPadding ?? 0) * 2
-		);
-		const maxScrollableHeight = kbVisible
-			? Math.max(
-				0,
-				windowHeight -
-				insets.top -
-				insets.bottom -
-				(verticalPadding ?? 0) * 2 -
-				40 -
-				(autoKeyboardInset && kbVisible ? kbHeight : 0)
-			)
-			: availableScreenHeight;
 		return (
 			<Portal>
 				{/* absorb touches behind overlay, but never after the overlay closes */}
@@ -320,18 +471,16 @@ export default function OverlayContainer({
 							bottom: 0,
 							top: 0,
 							paddingHorizontal: horizontalPadding,
-							paddingTop: containerTopPad,
-							// Add additional bottom padding to lift centered content when keyboard is open
-							paddingBottom: baseVertical + containerBottomPad,
+							paddingTop: verticalPadding,
+							// Reserve the keyboard so bottom/centred content sits above it
+							paddingBottom: verticalPadding + keyboardLift,
 							alignItems: contentFill ? 'stretch' : 'center',
 							justifyContent:
 								position === 'bottom'
 									? 'flex-end'
 									: position === 'top'
 										? 'flex-start'
-										: position === 'center' && centerLiftOnKeyboard && kbVisible
-											? 'flex-start'
-											: 'center',
+										: 'center',
 							zIndex: 999,
 							elevation: 999,
 						}}
@@ -341,52 +490,70 @@ export default function OverlayContainer({
 							nativeID={id}
 							pointerEvents={mounted ? 'auto' : 'none'}
 							collapsable={false}
+							onLayout={(e) => {
+								const next = Math.round(e.nativeEvent.layout.height);
+								setContentHeight((prev) =>
+									Math.abs(prev - next) > 1 ? next : prev
+								);
+							}}
 							style={[
-								{ width: '100%' },
+								{ width: '100%', paddingTop: closeBand },
 								// If centered and not actively filling, cap the wrapper height
 								...(position === 'center' && !contentFillActive
-									? [{ maxHeight: maxScrollableHeight }]
+									? [{ maxHeight: maxContentHeight }]
 									: []),
 								animatedContentStyle,
 							]}
 						>
 							{scrollable ? (
-								<ScrollView
-									ref={(r) => {
-										internalScrollRef.current = r;
-										getScrollRef?.(r);
-									}}
-									keyboardShouldPersistTaps='handled'
-									keyboardDismissMode={
-										Platform.OS === 'ios' ? 'interactive' : 'on-drag'
-									}
-									automaticallyAdjustKeyboardInsets={false}
-									showsVerticalScrollIndicator={false}
-									contentContainerStyle={[
-										{
-											paddingBottom:
-												(autoKeyboardInset && kbVisible
-													? kbHeight + keyboardGap
-													: 0) +
-												insets.bottom +
-												bottomPadding,
-										},
-										scrollProps?.contentContainerStyle,
+								<View
+									style={[
+										styles.scrollCard,
+										{ backgroundColor: cardBackground },
 									]}
-									style={{
-										width: '100%',
-										// When not filling, cap height so the wrapper can be centered initially
-										...(position === 'center' && !contentFill
-											? { maxHeight: maxScrollableHeight }
-											: null),
-									}}
-									{...scrollProps}
 								>
-									{children}
-								</ScrollView>
+									<ScrollView
+										{...scrollProps}
+										ref={(r) => {
+											internalScrollRef.current = r;
+											if (!r) scrollOffsetRef.current = 0;
+											getScrollRef?.(r);
+										}}
+										keyboardShouldPersistTaps='handled'
+										keyboardDismissMode={
+											Platform.OS === 'ios' ? 'interactive' : 'none'
+										}
+										automaticallyAdjustKeyboardInsets={false}
+										showsVerticalScrollIndicator={false}
+										scrollEventThrottle={16}
+										onLayout={(e) => {
+											scrollViewportHeightRef.current =
+												e.nativeEvent.layout.height;
+										}}
+										onScroll={(e) => {
+											scrollOffsetRef.current =
+												e.nativeEvent.contentOffset.y;
+											scrollProps?.onScroll?.(e);
+										}}
+										contentContainerStyle={[
+											{ paddingBottom: insets.bottom + bottomPadding },
+											scrollProps?.contentContainerStyle,
+										]}
+										style={{
+											width: '100%',
+											// When not filling, cap height so the wrapper can be centered initially
+											...(position === 'center' && !contentFill
+												? { maxHeight: contentMaxHeight }
+												: null),
+										}}
+									>
+										{children}
+									</ScrollView>
+								</View>
 							) : (
 								children
 							)}
+							{closeButton}
 						</Animated.View>
 					</View>
 				</View>
@@ -394,33 +561,6 @@ export default function OverlayContainer({
 		);
 	}
 
-	const _computedPadModal =
-		centerLiftOnKeyboard && position === 'center' && kbVisible
-			? Math.round(
-				(kbHeight + insets.bottom) * Math.max(0, Math.min(centerLiftRatio, 1))
-			)
-			: 0;
-	const containerBottomPadModal = Math.min(2, _computedPadModal);
-	const baseVerticalModal = verticalPadding ?? 0;
-	const containerTopPadModal =
-		centerLiftOnKeyboard && position === 'center' && kbVisible
-			? Math.min(2, baseVerticalModal)
-			: baseVerticalModal;
-
-	const maxScrollableHeightModal = kbVisible
-		? Math.max(
-			0,
-			windowHeight -
-			insets.top -
-			insets.bottom -
-			(verticalPadding ?? 0) * 2 -
-			40 -
-			(autoKeyboardInset && kbVisible ? kbHeight : 0)
-		)
-		: Math.max(
-			0,
-			windowHeight - insets.top - insets.bottom - (verticalPadding ?? 0) * 2
-		);
 	return (
 		<Modal
 			transparent={Platform.OS !== 'android'}
@@ -459,17 +599,15 @@ export default function OverlayContainer({
 						bottom: 0,
 						top: 0,
 						paddingHorizontal: horizontalPadding,
-						paddingTop: containerTopPadModal,
-						paddingBottom: baseVerticalModal + containerBottomPadModal,
+						paddingTop: verticalPadding,
+						paddingBottom: verticalPadding + keyboardLift,
 						alignItems: contentFill ? 'stretch' : 'center',
 						justifyContent:
 							position === 'bottom'
 								? 'flex-end'
 								: position === 'top'
 									? 'flex-start'
-									: position === 'center' && centerLiftOnKeyboard && kbVisible
-										? 'flex-start'
-										: 'center',
+									: 'center',
 						zIndex: 999,
 						elevation: 999,
 					}}
@@ -478,11 +616,17 @@ export default function OverlayContainer({
 						nativeID={id}
 						pointerEvents='auto'
 						collapsable={false}
+						onLayout={(e) => {
+							const next = Math.round(e.nativeEvent.layout.height);
+							setContentHeight((prev) =>
+								Math.abs(prev - next) > 1 ? next : prev
+							);
+						}}
 						style={[
-							{ opacity: fadeAnim, width: '100%' },
+							{ opacity: fadeAnim, width: '100%', paddingTop: closeBand },
 							// Cap height when centered and not filling so the child can't grow too tall
 							...(position === 'center' && !contentFill
-								? [{ maxHeight: maxScrollableHeightModal }]
+								? [{ maxHeight: maxContentHeight }]
 								: []),
 							contentFill && position !== 'center' && { flex: 1 },
 							!contentFill && {
@@ -498,44 +642,80 @@ export default function OverlayContainer({
 						]}
 					>
 						{scrollable ? (
-							<ScrollView
-								ref={(r) => {
-									internalScrollRef.current = r;
-									getScrollRef?.(r);
-								}}
-								keyboardShouldPersistTaps='handled'
-								keyboardDismissMode={
-									Platform.OS === 'ios' ? 'interactive' : 'on-drag'
-								}
-								automaticallyAdjustKeyboardInsets={false}
-								showsVerticalScrollIndicator={false}
-								contentContainerStyle={[
-									{
-										paddingBottom:
-											(autoKeyboardInset && kbVisible
-												? kbHeight + keyboardGap
-												: 0) +
-											insets.bottom +
-											bottomPadding,
-									},
-									scrollProps?.contentContainerStyle,
+							<View
+								style={[
+									styles.scrollCard,
+									{ backgroundColor: cardBackground },
 								]}
-								style={{
-									width: '100%',
-									...(position === 'center' && !contentFill
-										? { maxHeight: maxScrollableHeightModal }
-										: null),
-								}}
-								{...scrollProps}
 							>
-								{children}
-							</ScrollView>
+								<ScrollView
+									{...scrollProps}
+									ref={(r) => {
+										internalScrollRef.current = r;
+										if (!r) scrollOffsetRef.current = 0;
+										getScrollRef?.(r);
+									}}
+									keyboardShouldPersistTaps='handled'
+									keyboardDismissMode={
+										Platform.OS === 'ios' ? 'interactive' : 'none'
+									}
+									automaticallyAdjustKeyboardInsets={false}
+									showsVerticalScrollIndicator={false}
+									scrollEventThrottle={16}
+									onLayout={(e) => {
+										scrollViewportHeightRef.current =
+											e.nativeEvent.layout.height;
+									}}
+									onScroll={(e) => {
+										scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+										scrollProps?.onScroll?.(e);
+									}}
+									contentContainerStyle={[
+										{ paddingBottom: insets.bottom + bottomPadding },
+										scrollProps?.contentContainerStyle,
+									]}
+									style={{
+										width: '100%',
+										...(position === 'center' && !contentFill
+											? { maxHeight: contentMaxHeight }
+											: null),
+									}}
+								>
+									{children}
+								</ScrollView>
+							</View>
 						) : (
 							children
 						)}
+						{closeButton}
 					</Animated.View>
 				</View>
 			</View>
 		</Modal>
 	);
 }
+
+const styles = StyleSheet.create({
+	/**
+	 * Rounded frame around a scrollable overlay's content. The ScrollView lives
+	 * inside it, so the card's corners stay visible while the form scrolls.
+	 */
+	scrollCard: {
+		width: '100%',
+		borderRadius: CARD_RADIUS,
+		overflow: 'hidden',
+	},
+	/** Close affordance pinned above the card's top-right corner. */
+	closeButton: {
+		position: 'absolute',
+		top: 2,
+		right: 8,
+		width: 30,
+		height: 30,
+		borderRadius: 15,
+		alignItems: 'center',
+		justifyContent: 'center',
+		zIndex: 10,
+		elevation: 10,
+	},
+});

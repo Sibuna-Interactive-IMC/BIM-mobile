@@ -156,7 +156,14 @@ export default function VerifyTokenScreen() {
 			return handleToggleLoader(false);
 		}
 		try {
-			await handleVerify(code);
+			// The keyboard's submit key and the button must take the same path:
+			// a TOTP login verifies against the authenticator endpoint, not the
+			// OTP one.
+			if (pending2FAMethod === 'totp') {
+				await handleVerify2FA(code);
+			} else {
+				await handleVerify(code);
+			}
 		} finally {
 			handleToggleLoader(false);
 		}
@@ -247,43 +254,23 @@ export default function VerifyTokenScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='number-pad'
+									returnKeyType='done'
+									onSubmitEditing={handleOnVerifyCode}
 									onFocus={() => setFocusedInput('code')}
 									onBlur={() => setFocusedInput(null)}
 								/>
 
-								{pending2FAMethod === 'totp' ? (
-									<ThemedButton
-										title={translations[language].categories.buttons[
-											'verifyOTP'
-										]?.toUpperCase()}
-										onPress={async () => {
-											// call TOTP verify handler
-											handleToggleLoader(true);
-											try {
-												await handleVerify2FA(code);
-											} finally {
-												handleToggleLoader(false);
-											}
-										}}
-										style={{ borderRadius: 8 }}
-										darkColor={errors['login'] ? buttonError : bim}
-										lightColor={errors['login'] ? buttonError : bim}
-										darkTextColor={authButtonText}
-										lightTextColor={authButtonText}
-									/>
-								) : (
-									<ThemedButton
-										title={translations[language].categories.buttons[
-											'verifyOTP'
-										]?.toUpperCase()}
-										onPress={handleOnVerifyCode}
-										style={{ borderRadius: 8 }}
-										darkColor={errors['login'] ? buttonError : bim}
-										lightColor={errors['login'] ? buttonError : bim}
-										darkTextColor={authButtonText}
-										lightTextColor={authButtonText}
-									/>
-								)}
+								<ThemedButton
+									title={translations[language].categories.buttons[
+										'verifyOTP'
+									]?.toUpperCase()}
+									onPress={handleOnVerifyCode}
+									style={{ borderRadius: 8 }}
+									darkColor={errors['login'] ? buttonError : bim}
+									lightColor={errors['login'] ? buttonError : bim}
+									darkTextColor={authButtonText}
+									lightTextColor={authButtonText}
+								/>
 							</ThemedView>
 						</ThemedView>
 					</ThemedView>

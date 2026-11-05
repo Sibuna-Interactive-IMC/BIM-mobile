@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 
 export type ThemedButtonProps = {
-	title: string;
+	/** Visible label; omit for an icon-only button and pass `accessibilityLabel`. */
+	title?: string;
+	accessibilityLabel?: string;
 	onPress: () => void;
 	style?: StyleProp<ViewStyle>;
 	textStyle?: StyleProp<TextStyle>;
@@ -30,6 +32,7 @@ export type ThemedButtonProps = {
 
 export function ThemedButton({
 	title,
+	accessibilityLabel,
 	onPress,
 	style,
 	textStyle,
@@ -52,6 +55,7 @@ export function ThemedButton({
 	const userSetTextColor =
 		colorScheme === 'dark' ? darkTextColor : lightTextColor;
 	const textColor = userSetTextColor ? userSetTextColor : presetTxtColor;
+	const label = loading ? '…' : title;
 
 	return (
 		<TouchableOpacity
@@ -67,6 +71,8 @@ export function ThemedButton({
 			]}
 			onPress={onPress}
 			disabled={!!disabled || !!loading}
+			accessibilityRole='button'
+			accessibilityLabel={accessibilityLabel ?? title}
 		>
 			<ThemedView
 				style={styles.buttonContent}
@@ -76,18 +82,20 @@ export function ThemedButton({
 				{icon && !loading && (
 					<IconSymbol name={icon} size={20} color={iconColor || textColor} />
 				)}
-				<ThemedText
-					numberOfLines={numberOfLines}
-					style={[
-						styles.buttonText,
-						{ color: textColor, textTransform: 'uppercase' },
-						textStyle,
-					]}
-					lightColor={textColor}
-					darkColor={textColor}
-				>
-					{loading ? '…' : title}
-				</ThemedText>
+				{label ? (
+					<ThemedText
+						numberOfLines={numberOfLines}
+						style={[
+							styles.buttonText,
+							{ color: textColor, textTransform: 'uppercase' },
+							textStyle,
+						]}
+						lightColor={textColor}
+						darkColor={textColor}
+					>
+						{label}
+					</ThemedText>
+				) : null}
 			</ThemedView>
 		</TouchableOpacity>
 	);

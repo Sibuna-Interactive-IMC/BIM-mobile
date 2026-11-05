@@ -1,4 +1,3 @@
-import FormContainer from '@/components/FormContainer';
 import { useCallback, useEffect, useState } from 'react';
 import { Animated, useColorScheme, View } from 'react-native';
 
@@ -122,7 +121,7 @@ export default function InternetPackageOverlay({
 			position='center'
 			onRequestClose={onRequestClose ?? onClose}
 		>
-			<FormContainer style={{ width: '100%' }}>
+			<View style={{ width: '100%' }}>
 				<ThemedView
 					style={{
 						flexDirection: 'column',
@@ -218,7 +217,7 @@ export default function InternetPackageOverlay({
 						)}
 					</View>
 				</ThemedView>
-			</FormContainer>
+			</View>
 		</OverlayContainer>
 	);
 }

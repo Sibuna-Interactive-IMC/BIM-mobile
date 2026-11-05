@@ -962,6 +962,7 @@ export default function PackagesScreen() {
 					<ScrollView
 						horizontal
 						showsHorizontalScrollIndicator={false}
+						keyboardShouldPersistTaps='handled'
 						style={{ width: '100%' }}
 						contentContainerStyle={styles.selectorRow}
 					>

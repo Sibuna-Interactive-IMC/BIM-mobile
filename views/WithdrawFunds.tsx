@@ -1,4 +1,3 @@
-import FormContainer from '@/components/FormContainer';
 import OverlayContainer from '@/components/OverlayContainer';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedInput } from '@/components/ThemedInput';
@@ -20,7 +19,7 @@ import type {
 	WithdrawalRequestResult,
 } from '@/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 
 /** The web form enforces this minimum before it will request an OTP. */
 const MIN_WITHDRAWAL = 10000;
@@ -260,10 +259,7 @@ export default function WithdrawFunds({
 			centerLiftOnKeyboard
 			centerLiftRatio={0.9}
 		>
-			<FormContainer
-				behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-				style={styles.kbContainer}
-			>
+			<View style={styles.kbContainer}>
 				<ThemedView style={styles.card} lightColor={bg} darkColor={bg}>
 					<ThemedText
 						style={[styles.title, { color: screenTitleText }]}
@@ -481,7 +477,7 @@ export default function WithdrawFunds({
 						</>
 					) : null}
 				</ThemedView>
-			</FormContainer>
+			</View>
 		</OverlayContainer>
 	);
 }

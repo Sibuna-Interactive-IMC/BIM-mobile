@@ -769,10 +769,11 @@ export interface Voucher {
 	is_manual?: boolean;
 	is_trial?: boolean;
 	mac_address?: string | null;
-	/** First login (start date), already formatted by the API. */
+	/** First login (start date), already formatted by the API (`d M Y, H:i`). */
 	first_auth?: string | null;
 	last_auth?: string | null;
 	created_at?: string | null;
+	/** FreeRADIUS expiration string (`d M Y H:i:s`), or a `01 Jan 2099` sentinel while unused. */
 	expires_at?: string | null;
 	/** Current session duration, e.g. `4m27s`. */
 	uptime?: string | null;

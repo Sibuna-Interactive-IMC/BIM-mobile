@@ -187,6 +187,12 @@ export default function Setup2FAScreen() {
 		}
 	};
 
+	// One gate for the button and the keyboard's submit key.
+	const canCompleteTotp =
+		!loading &&
+		!!pending2FASetup?.setup_token &&
+		code.trim().length > 0;
+
 	useEffect(() => {
 		if (!focusedInput || !scrollRef.current) return;
 		const responder: any =
@@ -305,6 +311,10 @@ export default function Setup2FAScreen() {
 						}
 						placeholderTextColor={textColor}
 						keyboardType='number-pad'
+						returnKeyType='done'
+						onSubmitEditing={() => {
+							if (canCompleteTotp) handleOnSetupTotp();
+						}}
 					/>
 
 					<ThemedView style={{ gap: 12, width: '100%', marginTop: 20 }}>
@@ -331,12 +341,7 @@ export default function Setup2FAScreen() {
 							textStyle={{ color: authButtonText }}
 							lightColor={bim}
 							darkColor={bim}
-							disabled={
-								loading ||
-								!pending2FASetup?.setup_token ||
-								!code ||
-								code.trim().length === 0
-							}
+							disabled={!canCompleteTotp}
 						/>
 					</ThemedView>
 

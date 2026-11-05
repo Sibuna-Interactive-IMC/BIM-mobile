@@ -31,7 +31,7 @@ import {
 function RootLayoutContent() {
 	const colorScheme = useColorScheme();
 	const Anim = useAnimatedValue(0); // Example of using an animated value
-	const { online, verifyingAuth, authToken } = useGeneral(); // Get online and auth verifying status from context
+	const { online, verifyingAuth } = useGeneral(); // Get online and auth verifying status from context
 	const [loaded] = useFonts({
 		SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
 	});
@@ -174,35 +174,34 @@ function RootLayoutContent() {
 			};
 		}
 	}, [loaded, verifyingAuth]);
-	if (!loaded || verifyingAuth) {
-		// While fonts or other assets load, render a full-screen placeholder
-		// matching the native splash background to avoid a black flash and to
-		// prevent a second splash from briefly appearing.
-		const schemeKey = (colorScheme as any) || 'light';
-		const bg = (Colors as any)[schemeKey]?.background ?? '#ffffff';
+	const schemeKey = (colorScheme as any) || 'light';
+	const bg = (Colors as any)[schemeKey]?.background ?? '#ffffff';
+	const tint = (Colors as any)[schemeKey]?.bim ?? '#EE8438';
 
-		if (!loaded) {
-			return (
-				<View
-					style={{
-						flex: 1,
-						justifyContent: 'center',
-						alignItems: 'center',
-						backgroundColor: bg,
-					}}
+	if (!loaded) {
+		// Keep the native-splash look, but show the spinner from the first JS
+		// frame so there is no blank gap before the auth loader appears.
+		return (
+			<View style={{ flex: 1, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
+				<ImageBackground
+					source={require('../assets/images/splash-icon.png')}
+					resizeMode='contain'
+					style={{ width: 150, height: 150, alignSelf: 'center' }}
 				>
-					<ImageBackground
-						source={require('../assets/images/splash-icon.png')}
-						resizeMode='contain'
+					<View
 						style={{
-							flex: 1,
+							position: 'absolute',
+							bottom: 100,
+							left: 0,
+							right: 0,
 							alignItems: 'center',
-							justifyContent: 'center',
 						}}
-					/>
-				</View>
-			);
-		}
+					>
+						<ActivityIndicator size='large' color={tint} />
+					</View>
+				</ImageBackground>
+			</View>
+		);
 	}
 
 	return (
@@ -234,10 +233,11 @@ function RootLayoutContent() {
 				<Stack.Screen name='(authenticated)' options={{ headerShown: false }} />
 				<Stack.Screen name='+not-found' />
 			</Stack>
-			{/* Single global auth loader: only blocks the UI during the initial boot
-			    check, before a token is available. Once a token exists the screens
-			    render their own loading indicators. */}
-			{verifyingAuth && !authToken && (
+			{/* Boot-time auth loader: a translucent scrim over the initial (auth)
+			    screen until the stored token has been read and verified. It also
+			    blocks touches, so users can't start a second auth flow while
+			    auto-login is in progress. */}
+			{verifyingAuth && (
 				<View
 					style={{
 						...StyleSheet.absoluteFillObject,
@@ -247,7 +247,7 @@ function RootLayoutContent() {
 						zIndex: 1000,
 					}}
 				>
-					<ActivityIndicator size="large" color="#fff" />
+					<ActivityIndicator size='large' color='#fff' />
 				</View>
 			)}
 			<StatusBar style='auto' />

@@ -53,6 +53,10 @@ export default function RegisterScreen() {
 	const signupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const loaderFadeAnim = useAnimatedValue(0);
 	const scrollRef = useRef<any>(null);
+	const phoneInputRef = useRef<TextInput>(null);
+	const emailInputRef = useRef<TextInput>(null);
+	const passwordInputRef = useRef<TextInput>(null);
+	const confirmPasswordInputRef = useRef<TextInput>(null);
 	useColorScheme();
 	const { language, handleRegistration } = useGeneral();
 
@@ -384,10 +388,14 @@ export default function RegisterScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='default'
+									returnKeyType='next'
+									submitBehavior='submit'
+									onSubmitEditing={() => phoneInputRef.current?.focus()}
 									onFocus={() => setFocusedInput('fullName')}
 									onBlur={() => setFocusedInput(null)}
 								/>
 								<ThemedInput
+									ref={phoneInputRef}
 									style={[
 										styles.formInput,
 										{
@@ -405,10 +413,14 @@ export default function RegisterScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='number-pad'
+									returnKeyType='next'
+									submitBehavior='submit'
+									onSubmitEditing={() => emailInputRef.current?.focus()}
 									onFocus={() => setFocusedInput('phoneNumber')}
 									onBlur={() => setFocusedInput(null)}
 								/>
 								<ThemedInput
+									ref={emailInputRef}
 									style={[
 										styles.formInput,
 										{
@@ -422,10 +434,14 @@ export default function RegisterScreen() {
 									placeholder={translations[language].categories.auth['email']}
 									placeholderTextColor={textColor}
 									keyboardType='email-address'
+									returnKeyType='next'
+									submitBehavior='submit'
+									onSubmitEditing={() => passwordInputRef.current?.focus()}
 									onFocus={() => setFocusedInput('email')}
 									onBlur={() => setFocusedInput(null)}
 								/>
 								<ThemedInput
+									ref={passwordInputRef}
 									style={[
 										styles.formInput,
 										{
@@ -442,10 +458,16 @@ export default function RegisterScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='default'
+									returnKeyType='next'
+									submitBehavior='submit'
+									onSubmitEditing={() =>
+										confirmPasswordInputRef.current?.focus()
+									}
 									onFocus={() => setFocusedInput('password')}
 									onBlur={() => setFocusedInput(null)}
 								/>
 								<ThemedInput
+									ref={confirmPasswordInputRef}
 									style={[
 										styles.formInput,
 										{
@@ -470,6 +492,8 @@ export default function RegisterScreen() {
 									}
 									placeholderTextColor={textColor}
 									keyboardType='default'
+									returnKeyType='go'
+									onSubmitEditing={handleOnSignUp}
 									onFocus={() => setFocusedInput('confirmPassword')}
 									onBlur={() => setFocusedInput(null)}
 								/>
