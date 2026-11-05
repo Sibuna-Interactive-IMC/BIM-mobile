@@ -121,12 +121,37 @@ export function extractNotificationId(
 }
 
 /**
+ * Backend app links describe resources (`bim://approvals/withdrawals/{id}`),
+ * not expo-router screens. Map their prefixes onto the screen that can act on
+ * them; the detail id is not needed by those screens yet.
+ */
+const APP_LINK_ALIASES: { prefix: string; route: string }[] = [
+	{ prefix: 'approvals/withdrawals', route: '/withdraw-approvals' },
+	{ prefix: 'approvals/profit', route: '/profit' },
+	{ prefix: 'admin/analytics/profit', route: '/profit' },
+	{ prefix: 'disbursement-records', route: '/disbursement-records' },
+	{ prefix: 'disbursements', route: '/disbursement-records' },
+	{ prefix: 'withdraw/approvals', route: '/withdraw-approvals' },
+	{ prefix: 'profit', route: '/profit' },
+	{ prefix: 'withdrawals', route: '/withdraw-approvals' },
+];
+
+function appLinkRoute(path: string): string | null {
+	for (const alias of APP_LINK_ALIASES) {
+		if (path === alias.prefix || path.startsWith(`${alias.prefix}/`)) {
+			return alias.route;
+		}
+	}
+	return null;
+}
+
+/**
  * In-app route for a notification link.
  *
  * Accepts what the web dashboard stores (`/withdraw-approvals`), a custom
- * scheme link (`bimmobile://withdraw-approvals`) or an absolute URL, and keeps
- * only the path. Route groups are optional in expo-router URLs, so the path is
- * left as-is apart from the group prefix the app prepends.
+ * scheme link (`bim://approvals/withdrawals/{id}`) or an absolute URL, and
+ * keeps only the path. Route groups are optional in expo-router URLs, so the
+ * path is left as-is apart from the group prefix the app prepends.
  */
 export function resolveNotificationRoute(link?: string | null): string {
 	if (!link) return NOTIFICATIONS_ROUTE;
@@ -154,7 +179,12 @@ export function resolveNotificationRoute(link?: string | null): string {
 	path = path.replace(/^\/\([^)]*\)/, '') || '/';
 
 	const [pathname] = path.split(/[?#]/);
-	const segment = pathname.replace(/^\/+/, '').split('/')[0];
+	const cleaned = pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+
+	const alias = appLinkRoute(cleaned);
+	if (alias) return alias;
+
+	const segment = cleaned.split('/')[0];
 	if (!segment || !PUSH_ROUTES.has(segment)) return NOTIFICATIONS_ROUTE;
 
 	return path;

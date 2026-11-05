@@ -385,6 +385,14 @@ export interface notifications {
 	isRead: boolean;
 	createdAt: Date;
 	updatedAt: Date;
+	/** Inbox category (`approval.withdrawal`, `profit.withdrawal`, …). */
+	category?: string;
+	categoryLabel?: string;
+	/** Deep link the notification points at; opening the row follows it. */
+	link?: {
+		web?: string | null;
+		app?: string | null;
+	} | null;
 }
 
 /** Push installs are registered per platform (`POST /push-devices`). */
@@ -682,6 +690,16 @@ export interface DashboardData {
 	monthUsers?: number;
 	routerBalances?: RouterBalance[];
 	chartData?: ChartDataEntry[];
+	/** Per-user approval banner counts (same fields the web dashboard reads). */
+	pendingApprovalCount?: number;
+	myPendingCount?: number;
+	profitPendingApprovalCount?: number;
+	myProfitPendingCount?: number;
+	pendingApprovals?: {
+		id: number | string;
+		router_name?: string;
+		amount?: number;
+	}[];
 }
 
 /** `GET /dashboard` and `GET /dashboard/refresh` */

@@ -55,7 +55,7 @@ const STATUS_TONES: Record<string, 'success' | 'warning' | 'danger' | 'info' | '
 export default function ProfitScreen() {
 	useTrackHistory('/(authenticated)/profit');
 	useAccountsBack();
-	const { language, authToken, user } = useGeneral();
+	const { language, authToken, user, refreshDashboard } = useGeneral();
 	const t = translations[language].categories.profit;
 	const buttons = translations[language].categories.buttons;
 	const loadingCopy = translations[language].categories.dashboard.loading;
@@ -193,13 +193,14 @@ export default function ProfitScreen() {
 				return;
 			}
 			await load();
+			void refreshDashboard?.(true);
 		} catch (e) {
 			console.error('[ProfitScreen] decision failed', e);
 			ShowAlert(t.actionFailed, 'Error');
 		} finally {
 			setPendingKey(null);
 		}
-	}, [authToken, closePrompt, load, t.actionFailed]);
+	}, [authToken, closePrompt, load, refreshDashboard, t.actionFailed]);
 
 	const withdrawalFields = (withdrawal?: ProfitWithdrawal | null): RecordField[] => [
 		{

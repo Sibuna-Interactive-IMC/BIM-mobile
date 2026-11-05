@@ -58,6 +58,10 @@ export interface GeneralContextType {
 	handleLogout: () => Promise<void>;
 	fetchNotifications: () => Promise<void>;
 	notifications: notifications[];
+	/** Unread rows from the inbox, kept in sync with the header badge. */
+	unreadNotificationCount: number;
+	markNotificationRead: (id: string) => Promise<void>;
+	markAllNotificationsRead: () => Promise<void>;
 	isAnimatable: boolean;
 	isHighEndDevice: boolean;
 	keyboardVisible: boolean;
@@ -226,6 +230,11 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 		authTokenRef.current = authToken;
 	}, [authToken]);
 	const [notifications, setNotifications] = useState<notifications[]>([]);
+	const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+	const notificationsRef = React.useRef<notifications[]>([]);
+	React.useEffect(() => {
+		notificationsRef.current = notifications;
+	}, [notifications]);
 	const [pendingPhone, setPendingPhone] = useState<string | null>(null);
 	// Which 2FA method is expected for the current pending verification
 	// 'sms' = SMS OTP, 'totp' = authenticator app code
@@ -401,6 +410,7 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 				// Reset state
 				setUser(null);
 				setNotifications([]);
+				setUnreadNotificationCount(0);
 				// Drop the view history so the next session starts clean
 				setHistory([]);
 				writeHistoryStorage('[]');
@@ -690,9 +700,142 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 		);
 	}, [totalMemory]);
 
+	/**
+	 * Load the caller's inbox. Also refreshes the header badge count from the
+	 * server so unread rows outside the first page are still counted.
+	 */
+	const fetchNotifications = useCallback(async () => {
+		try {
+			const token =
+				authToken || (await SecureStore.getItemAsync('auth_token'));
+			if (!token) {
+				setNotifications([]);
+				setUnreadNotificationCount(0);
+				return;
+			}
+
+			const response = await InboxService.fetchInbox(String(token), {
+				perPage: 50,
+			});
+			if (!response.ok) return;
+
+			const body = await response.json().catch(() => null);
+			const data = getApiData<{
+				notifications?: InboxNotification[];
+				unread_count?: number;
+			}>(body);
+			if (!data || !Array.isArray(data.notifications)) return;
+			const rows = data.notifications;
+
+			const mapped: notifications[] = rows.map((row) => {
+				const createdAt = row.created_at ? new Date(row.created_at) : new Date();
+				return {
+					id: row.id,
+					from: row.subject?.type ?? '',
+					to: '',
+					type:
+						row.type === 'alert' || row.type === 'reminder'
+							? row.type
+							: 'message',
+					title: row.title,
+					message: row.body,
+					isRead: row.read,
+					createdAt,
+					updatedAt: createdAt,
+					category: row.category,
+					categoryLabel: row.category_label,
+					link: row.link,
+				};
+			});
+
+			setNotifications(mapped);
+			setUnreadNotificationCount(
+				typeof data?.unread_count === 'number'
+					? data.unread_count
+					: mapped.filter((row) => !row.isRead).length
+			);
+		} catch (error) {
+			console.warn('[GeneralContext] fetchNotifications failed', error);
+		}
+	}, [authToken]);
+
+	/**
+	 * Cheap poll for the header badge. The full inbox is only fetched when the
+	 * bell opens (or a push arrives), so the list stays fresh without downloading
+	 * 50 rows every minute.
+	 */
+	const refreshNotificationCount = useCallback(async () => {
+		try {
+			const token =
+				authToken || (await SecureStore.getItemAsync('auth_token'));
+			if (!token) return;
+			const response = await InboxService.fetchInboxUnreadCount(String(token));
+			if (!response.ok) return;
+			const body = await response.json().catch(() => null);
+			const data = getApiData<{ count?: number }>(body);
+			if (typeof data?.count === 'number') {
+				setUnreadNotificationCount(data.count);
+			}
+		} catch (error) {
+			console.warn(
+				'[GeneralContext] refreshNotificationCount failed',
+				error
+			);
+		}
+	}, [authToken]);
+
+	// Load on sign-in and when the token rotates, then poll the cheap unread
+	// count so pushes delivered to another device still reach the badge.
 	useEffect(() => {
-		if (mounted) (async () => await fetchNotifications())();
-	}, [mounted]);
+		if (!mounted) return;
+		if (!authToken) {
+			setNotifications([]);
+			setUnreadNotificationCount(0);
+			return;
+		}
+		void fetchNotifications();
+		const id = setInterval(() => {
+			void refreshNotificationCount();
+		}, 60 * 1000);
+		return () => clearInterval(id);
+	}, [mounted, authToken, fetchNotifications, refreshNotificationCount]);
+
+	/** Mark one inbox row read; the API call is idempotent. */
+	const markNotificationRead = useCallback(
+		async (id: string) => {
+			const token =
+				authToken || (await SecureStore.getItemAsync('auth_token'));
+			if (!token) return;
+			if (notificationsRef.current.find((row) => row.id === id)?.isRead) {
+				return;
+			}
+			try {
+				const response = await InboxService.markInboxRead(id, String(token));
+				if (!response.ok) return;
+				setNotifications((prev) =>
+					prev.map((row) => (row.id === id ? { ...row, isRead: true } : row))
+				);
+				setUnreadNotificationCount((prev) => Math.max(0, prev - 1));
+			} catch (error) {
+				console.warn('[GeneralContext] markNotificationRead failed', error);
+			}
+		},
+		[authToken]
+	);
+
+	/** Mark every inbox row read for this login. */
+	const markAllNotificationsRead = useCallback(async () => {
+		const token = authToken || (await SecureStore.getItemAsync('auth_token'));
+		if (!token) return;
+		try {
+			const response = await InboxService.markAllInboxRead(String(token));
+			if (!response.ok) return;
+			setNotifications((prev) => prev.map((row) => ({ ...row, isRead: true })));
+			setUnreadNotificationCount(0);
+		} catch (error) {
+			console.warn('[GeneralContext] markAllNotificationsRead failed', error);
+		}
+	}, [authToken]);
 
 	useEffect(() => {
 		const check = async () => {
@@ -1048,7 +1191,13 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 								todayTransactions: data.todayTransactions ?? 0,
 								todayUsers: data.todayUsers ?? 0,
 								weekTransactions: data.weekTransactions ?? 0,
-								weekUsers: data.weekUsers ?? 0
+								weekUsers: data.weekUsers ?? 0,
+								pendingApprovalCount: data.pendingApprovalCount ?? 0,
+								pendingApprovals: data.pendingApprovals,
+								myPendingCount: data.myPendingCount ?? 0,
+								profitPendingApprovalCount:
+									data.profitPendingApprovalCount ?? 0,
+								myProfitPendingCount: data.myProfitPendingCount ?? 0,
 							}
 							return { ...user, dashboard };
 						});
@@ -1433,48 +1582,6 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	};
 
-	const fetchNotifications = async () => {
-		try {
-			const token = await SecureStore.getItemAsync('auth_token');
-			if (!token) {
-				setNotifications([]);
-				return;
-			}
-
-			const response = await InboxService.fetchInbox(String(token), {
-				perPage: 50,
-			});
-			if (!response.ok) return;
-
-			const body = await response.json().catch(() => null);
-			const rows =
-				getApiData<{ notifications?: InboxNotification[] }>(body)
-					?.notifications ?? [];
-
-			setNotifications(
-				rows.map((row) => {
-					const createdAt = row.created_at ? new Date(row.created_at) : new Date();
-					return {
-						id: row.id,
-						from: row.subject?.type ?? '',
-						to: '',
-						type:
-							row.type === 'alert' || row.type === 'reminder'
-								? row.type
-								: 'message',
-						title: row.title,
-						message: row.body,
-						isRead: row.read,
-						createdAt,
-						updatedAt: createdAt,
-					};
-				})
-			);
-		} catch (error) {
-			console.warn('[GeneralContext] fetchNotifications failed', error);
-		}
-	};
-
 	const retryRefreshWrapper = useCallback(async () => {
 		const res = await attemptRefresh();
 		return !!res;
@@ -1496,7 +1603,10 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 				setLanguage,
 				keyboardVisible,
 				notifications,
+				unreadNotificationCount,
 				fetchNotifications,
+				markNotificationRead,
+				markAllNotificationsRead,
 				selectedOption,
 				setSelectedOption,
 				setNotifications,

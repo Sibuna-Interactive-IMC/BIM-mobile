@@ -1,42 +1,83 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { RecordCard, RecordList } from '@/components/RecordList';
+import type { RecordAction, RecordField } from '@/components/RecordList';
 import ScreenHeader from '@/components/ScreenHeader';
-import { ThemedText } from '@/components/ThemedText';
 import TileContainer from '@/components/TileContainer';
-import { ThemedView } from '@/components/ThemedView';
-import { fontSize, fontWeight } from '@/constants/Font';
+import { ThemedButton } from '@/components/ThemedButton';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
+import { formatDateTime, translateWithVariables } from '@/helpers';
+import {
+	NOTIFICATIONS_ROUTE,
+	resolveNotificationRoute,
+} from '@/helpers/pushNotifications';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import useHeaderBack from '@/hooks/useHeaderBack';
 import useTrackHistory from '@/hooks/useTrackHistory';
-import { useState } from 'react';
+import type { notifications as NotificationItem } from '@/types';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 export default function NotificationsScreen() {
 	useTrackHistory('/(authenticated)/notifications');
-	const { notifications, language, fetchNotifications } = useGeneral(); // Get notifications from context
-	const [refreshing, setRefreshing] = useState(false);
+	useHeaderBack('/(authenticated)/home');
+	const router = useRouter();
+	const {
+		notifications,
+		unreadNotificationCount,
+		language,
+		fetchNotifications,
+		markNotificationRead,
+		markAllNotificationsRead,
+	} = useGeneral();
+	const t = translations[language].categories.notifications;
 
-	const handleRefresh = async () => {
+	const [refreshing, setRefreshing] = useState(false);
+	const [markingAll, setMarkingAll] = useState(false);
+
+	const background = useThemeColor({}, 'background');
+
+	useEffect(() => {
+		void fetchNotifications();
+	}, [fetchNotifications]);
+
+	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
 		try {
 			await fetchNotifications();
 		} finally {
 			setRefreshing(false);
 		}
-	};
+	}, [fetchNotifications]);
 
-	const bg = useThemeColor({}, 'background');
-	const headers = useThemeColor({}, 'headers');
-	const inputContainerBackground = useThemeColor(
-		{},
-		'inputContainerBackground'
+	const openNotification = useCallback(
+		async (notification: NotificationItem) => {
+			await markNotificationRead(notification.id);
+			const route = resolveNotificationRoute(
+				notification.link?.app || notification.link?.web
+			);
+			if (route !== NOTIFICATIONS_ROUTE) {
+				router.push(route as never);
+			}
+		},
+		[markNotificationRead, router]
 	);
-	const textColor = useThemeColor({}, 'text');
+
+	const handleMarkAll = useCallback(async () => {
+		setMarkingAll(true);
+		try {
+			await markAllNotificationsRead();
+		} finally {
+			setMarkingAll(false);
+		}
+	}, [markAllNotificationsRead]);
+
 	return (
 		<ParallaxScrollView
 			headerBackgroundColor={{
-				light: bg,
-				dark: bg,
+				light: background,
+				dark: background,
 			}}
 			containerStyle={{ flex: 1 }}
 			onRefresh={handleRefresh}
@@ -46,94 +87,123 @@ export default function NotificationsScreen() {
 			<TileContainer
 				id='notifications-header-tile'
 				flat
-				backgroundColor={bg}
+				backgroundColor={background}
 				style={styles.headerTile}
 			>
 				<ScreenHeader
 					id='notifications-header'
-					title={translations[language].categories.notifications['title']}
+					title={t.title}
+					description={
+						unreadNotificationCount > 0
+							? translateWithVariables(t.unreadCount, {
+									count: unreadNotificationCount,
+								})
+							: t.allRead
+					}
+					action={
+						unreadNotificationCount > 0 ? (
+							<ThemedButton
+								title={t.markAllRead}
+								icon='check'
+								loading={markingAll}
+								onPress={() => void handleMarkAll()}
+								style={styles.markAllButton}
+								textStyle={styles.markAllText}
+							/>
+						) : undefined
+					}
 				/>
 			</TileContainer>
 			<TileContainer
 				id='notifications-list'
 				flat
-				backgroundColor={bg}
-				style={[styles.notificationsList, { alignItems: 'stretch' }]}
+				backgroundColor={background}
+				style={styles.notificationsList}
 			>
-				{notifications.length > 0 ? (
-					notifications.map((notification, index) => (
-						<ThemedView
-							key={index}
-							style={styles.notificationItem}
-							lightColor={inputContainerBackground}
-							darkColor={inputContainerBackground}
-						>
-							<ThemedText
-								style={styles.notificationTitle}
-								lightColor={headers}
-								darkColor={headers}
-							>
-								{notification.title}
-							</ThemedText>
-							<ThemedText
-								style={styles.notificationMessage}
-								lightColor={textColor}
-								darkColor={textColor}
-							>
-								{notification.message}
-							</ThemedText>
-						</ThemedView>
-					))
-				) : (
-					<ThemedText
-						style={styles.noNotifications}
-						lightColor={textColor}
-						darkColor={textColor}
-					>
-						{translations[language].categories.notifications['no.notifications']}
-					</ThemedText>
-				)}
+				<RecordList
+					id='notifications-record-list'
+					isEmpty={notifications.length === 0}
+					emptyMessage={t['no.notifications']}
+				>
+					{notifications.map((notification) => {
+						const route = resolveNotificationRoute(
+							notification.link?.app || notification.link?.web
+						);
+						const actions: RecordAction[] = [];
+
+						if (!notification.isRead) {
+							actions.push({
+								label: t.markRead,
+								icon: 'check',
+								tone: 'success',
+								onPress: () => {
+									void markNotificationRead(notification.id);
+								},
+							});
+						}
+
+						if (route !== NOTIFICATIONS_ROUTE) {
+							actions.push({
+								label: t.open,
+								icon: 'eye.outline',
+								tone: 'primary',
+								onPress: () => {
+									void openNotification(notification);
+								},
+							});
+						}
+
+						const fields: RecordField[] = [];
+						if (notification.categoryLabel || notification.category) {
+							fields.push({
+								label: t.category,
+								value: notification.categoryLabel || notification.category,
+							});
+						}
+						fields.push({
+							label: t.received,
+							value: formatDateTime(notification.createdAt.toISOString()),
+							fullWidth: true,
+						});
+
+						return (
+							<RecordCard
+								key={notification.id}
+								id={`notification-${notification.id}`}
+								title={notification.title || notification.message}
+								subtitle={notification.message}
+								badge={
+									!notification.isRead
+										? { label: t.new, tone: 'primary' }
+										: undefined
+								}
+								fields={fields}
+								actions={actions}
+								onPress={() => void openNotification(notification)}
+							/>
+						);
+					})}
+				</RecordList>
 			</TileContainer>
 		</ParallaxScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: {},
-	header: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		paddingVertical: 20,
-	},
 	notificationsList: {
-		flex: 4,
 		width: '100%',
 		paddingHorizontal: 10,
-	},
-	notificationItem: {
-		flexDirection: 'row',
-		gap: 10,
-		padding: 12,
-		borderBottomWidth: 1,
-	},
-	notificationTitle: {
-		fontWeight: 'bold',
-	},
-	notificationMessage: {
-		fontSize: fontSize['notification.body'],
-	},
-	noNotifications: {
-		padding: 12,
-		textAlign: 'center',
-	},
-	title: {
-		fontSize: fontSize['heading.one'],
-		fontWeight: fontWeight['heading.one'],
-		marginBottom: 20,
 	},
 	headerTile: {
 		width: '100%',
 		marginBottom: 12,
+	},
+	markAllButton: {
+		paddingVertical: 6,
+		paddingHorizontal: 10,
+		borderRadius: 6,
+	},
+	markAllText: {
+		fontSize: 12,
 	},
 });

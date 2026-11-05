@@ -194,6 +194,19 @@ The backend fans out over FCM, so the app registers its own device token with
   into the `notifications` state by `GeneralContext.fetchNotifications`. `/inbox`
   is the caller's own approval/decision feed — `/notifications` is the
   paid-customer transaction log and is a different list.
+- `fetchNotifications` re-runs when the bearer token arrives (login) or rotates;
+  while authenticated a 60s timer polls `GET /inbox/unread-count` for the bell
+  badge, so a push delivered to another device is still reflected. Opening the
+  bell reloads the list. Opening a row (bell dropdown or list) marks it read
+  with `POST /inbox/{id}/read`; the list's "mark all read" action uses
+  `POST /inbox/read-all`.
+- `components/ApprovalBanners` mirrors the web dashboard's Pending Approvals and
+  Profit Withdrawals cards. The counts (`pendingApprovalCount`,
+  `myPendingCount`, `profitPendingApprovalCount`, `myProfitPendingCount`) are
+  per-user fields merged into `GET /dashboard`, so the banner needs no extra
+  request; `refreshDashboard(true)` re-reads them after a submit or decision.
+  The copy distinguishes an approver (“need your response”) from an initiator
+  (“waiting for a response”).
 - The per-category channel switches (`GET`/`PATCH /inbox/settings`) live on the
   Settings screen (`views/SettingsScreen.tsx`), reachable from the drawer and
   from the avatar menu in the header. `locked` rows (the in-app inbox) render

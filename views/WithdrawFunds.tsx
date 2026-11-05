@@ -70,7 +70,7 @@ export default function WithdrawFunds({
 	onCancel: () => void;
 	onCompleted?: () => void;
 }) {
-	const { language } = useGeneral();
+	const { language, refreshDashboard } = useGeneral();
 	const t = translations[language].categories.withdraw;
 	const buttons = translations[language].categories.buttons;
 
@@ -218,6 +218,8 @@ export default function WithdrawFunds({
 			setResultReference(data.reference ?? reference);
 			setStep('done');
 			onCompleted?.();
+			// Refresh the dashboard so the new approval banner appears at once.
+			void refreshDashboard?.(true);
 		} catch (e) {
 			console.error('[WithdrawFunds] OTP submit failed', e);
 			ShowAlert(t.withdrawFailed, 'Error');
@@ -232,6 +234,7 @@ export default function WithdrawFunds({
 		otp,
 		phone,
 		reference,
+		refreshDashboard,
 		routerId,
 		t.doneMessage,
 		t.otpRequired,

@@ -104,6 +104,25 @@ describe('resolveNotificationRoute', () => {
 		expect(resolveNotificationRoute('/(authenticated)/profile')).toBe('/profile');
 	});
 
+	test('maps backend app links onto the screen that can act on them', () => {
+		expect(
+			resolveNotificationRoute('bim://approvals/withdrawals/0b0a')
+		).toBe('/withdraw-approvals');
+		expect(resolveNotificationRoute('bim://approvals/profit/44')).toBe(
+			'/profit'
+		);
+		expect(resolveNotificationRoute('bim://profit/44')).toBe('/profit');
+		expect(resolveNotificationRoute('bim://disbursements/9')).toBe(
+			'/disbursement-records'
+		);
+		expect(resolveNotificationRoute('bim://withdrawals/9')).toBe(
+			'/withdraw-approvals'
+		);
+		expect(resolveNotificationRoute('/withdraw/approvals')).toBe(
+			'/withdraw-approvals'
+		);
+	});
+
 	test('falls back to the inbox for unknown, empty or hostless links', () => {
 		expect(resolveNotificationRoute('/no-such-screen')).toBe(
 			NOTIFICATIONS_ROUTE

@@ -67,6 +67,14 @@ export async function markInboxRead(id: string, token?: string) {
 	});
 }
 
+/** `POST /inbox/read-all` — marks every unread message for this login read. */
+export async function markAllInboxRead(token?: string) {
+	return apiFetch(`${apiBaseUrl || ''}/inbox/read-all`, {
+		method: 'POST',
+		headers: buildHeaders(token),
+	});
+}
+
 /** `GET /inbox/settings` — the category × channel matrix with effective values. */
 export async function fetchInboxSettings(token?: string) {
 	return apiFetch(`${apiBaseUrl || ''}/inbox/settings`, {
@@ -94,6 +102,7 @@ export default {
 	fetchInbox,
 	fetchInboxUnreadCount,
 	markInboxRead,
+	markAllInboxRead,
 	fetchInboxSettings,
 	saveInboxSettings,
 };
