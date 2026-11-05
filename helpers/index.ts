@@ -257,6 +257,62 @@ export function formatDateTime(value?: string | null): string {
 	});
 }
 
+const MONTH_NAMES = [
+	'jan',
+	'feb',
+	'mar',
+	'apr',
+	'may',
+	'jun',
+	'jul',
+	'aug',
+	'sep',
+	'oct',
+	'nov',
+	'dec',
+];
+
+/**
+ * Parse the textual date shapes the API returns — Carbon's `05 Nov 2026, 10:54`
+ * and FreeRADIUS' `05 Nov 2026 10:54:00` — plus ISO strings. Hermes parses fewer
+ * date formats than V8, so the textual shapes are matched by hand.
+ */
+function parseApiDateTime(value: string): Date | null {
+	const match =
+		/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\s+(\d{4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(
+			value.trim()
+		);
+	if (match) {
+		const month = MONTH_NAMES.indexOf(match[2].toLowerCase());
+		if (month >= 0) {
+			return new Date(
+				Number(match[3]),
+				month,
+				Number(match[1]),
+				Number(match[4] ?? 0),
+				Number(match[5] ?? 0),
+				Number(match[6] ?? 0)
+			);
+		}
+	}
+	const date = new Date(value);
+	return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Format an API date/time as the compact `dd-mm-yy hh:mm` (24h) used where a
+ * record tile has no room for a long date. Unparseable values pass through.
+ */
+export function formatShortDateTime(value?: string | null): string {
+	if (!value) return '—';
+	const date = parseApiDateTime(value);
+	if (!date) return value;
+	const pad = (part: number) => `${part}`.padStart(2, '0');
+	return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${pad(
+		date.getFullYear() % 100
+	)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 /** `YYYY-MM-DD` (the API's date format) → a local `Date`, or null when unset. */
 export function parseApiDate(value?: string | null): Date | null {
 	if (!value) return null;

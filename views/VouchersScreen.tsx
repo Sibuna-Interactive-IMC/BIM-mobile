@@ -13,7 +13,7 @@ import TileContainer from '@/components/TileContainer';
 import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
-import { formatAmount, ShowAlert, translateWithVariables } from '@/helpers';
+import { formatAmount, formatShortDateTime, ShowAlert, translateWithVariables } from '@/helpers';
 import { getApiData, getApiMessage, getApiPagination } from '@/helpers/apiResponse';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
@@ -252,9 +252,9 @@ const VoucherCard = memo(function VoucherCard({
 		{ label: labels.router, value: voucher.router_name || '—' },
 		{ label: labels.profile, value: voucher.profile_display || voucher.profile || '—' },
 		{ label: labels.session, value: session || '—' },
-		{ label: labels.lastLogin, value: voucher.last_auth || '—' },
-		{ label: labels.startDate, value: voucher.first_auth || '—' },
-		{ label: labels.expiresAt, value: voucher.expires_at || '—' },
+		{ label: labels.lastLogin, value: formatShortDateTime(voucher.last_auth) },
+		{ label: labels.startDate, value: formatShortDateTime(voucher.first_auth) },
+		{ label: labels.expiresAt, value: formatShortDateTime(voucher.expires_at) },
 		{ label: labels.macAddress, value: voucher.mac_address || '—' },
 	];
 
