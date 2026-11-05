@@ -52,6 +52,12 @@ describe('inbox service', () => {
 		expect(calls()[0][1].method).toBe('POST');
 	});
 
+	test('marking the whole inbox read posts to read-all', async () => {
+		await InboxService.markAllInboxRead('token');
+		expect(calls()[0][0]).toBe('https://api.example/inbox/read-all');
+		expect(calls()[0][1].method).toBe('POST');
+	});
+
 	test('the channel matrix is read from the settings endpoint', async () => {
 		await InboxService.fetchInboxSettings('token');
 		expect(calls()[0][0]).toBe('https://api.example/inbox/settings');

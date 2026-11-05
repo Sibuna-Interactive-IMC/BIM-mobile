@@ -241,6 +241,14 @@ const translations: Translations = {
 				new: 'New',
 				'no.notifications': 'No new notifications available',
 				seeAll: 'View All Notifications',
+				markAllRead: 'Mark all read',
+				markRead: 'Mark read',
+				open: 'Open',
+				unread: 'Unread',
+				unreadCount: '{count} unread',
+				received: 'Received',
+				category: 'Category',
+				allRead: 'You are all caught up.',
 				channelName: 'Account notifications',
 				channelDescription:
 					'Approval requests, decisions and disbursement notices.',
@@ -1013,6 +1021,13 @@ const translations: Translations = {
 			dashboard: {
 				title: 'Dashboard',
 				currency: 'UGX',
+				pendingApprovals: 'Pending Approvals',
+				profitWithdrawals: 'Profit Withdrawals',
+				approvalActionSummary: '{count} need your response - tap to review →',
+				approvalAwaitingSummary:
+					'{count} waiting for a response - tap to review →',
+				approvalSummary:
+					'{action} need your response · {awaiting} waiting for a response - tap to review →',
 				todaysTransactions: "Today's Transactions",
 				weeksTransactions: "This Week's Transactions",
 				monthsTransactions: "This Month's Transactions",

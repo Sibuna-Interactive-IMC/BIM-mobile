@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import DashboardTile from '@/components/DashboardTile';
+import ApprovalBanners from '@/components/ApprovalBanners';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -199,6 +200,11 @@ export default function HomeScreen() {
 					}
 				/>
 			</TileContainer>
+			<ApprovalBanners
+				id='home-approval-banners'
+				counts={dashboard}
+				language={language}
+			/>
 			<TileContainer
 				id='home-content-tile'
 				flat

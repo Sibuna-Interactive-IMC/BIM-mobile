@@ -2,6 +2,7 @@ import avatarMaleImg from '@/assets/images/avatar-male.png';
 import { fontSize } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { searchFeatures, type AppFeature } from '@/helpers/featureSearch';
+import { resolveNotificationRoute } from '@/helpers/pushNotifications';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import {
 	headerOptions,
@@ -44,6 +45,12 @@ export type HeaderProps = {
 	setLanguage: (lang: langCode) => void;
 	notifications: notifications[];
 	setNotifications: React.Dispatch<React.SetStateAction<notifications[]>>;
+	/** Server-side unread count; falls back to counting the loaded rows. */
+	unreadNotificationCount?: number;
+	/** Reloads the inbox when the bell opens. */
+	fetchNotifications?: () => Promise<void>;
+	/** Persists a read acknowledgement for one inbox row. */
+	markNotificationRead?: (id: string) => Promise<void>;
 	selectedOption?: headerOptions;
 	setSelectedOption: React.Dispatch<React.SetStateAction<headerOptions>>;
 	online: boolean;
@@ -51,6 +58,10 @@ export type HeaderProps = {
 };
 
 const AVATAR_SIZE = 40;
+
+// Keep in sync with styles.container: the panel is portaled, so it needs the
+// header's bottom in screen space rather than a measured window coordinate.
+const HEADER_BOTTOM = (Platform.OS === 'ios' ? 50 : 40) + 60;
 
 // The API returns avatar urls pointing at SVG files, which the native <Image /> cannot render
 const isSvgAvatar = (uri?: string | null) => {
@@ -162,6 +173,9 @@ export default function Header({
 	setLanguage,
 	notifications,
 	setNotifications,
+	unreadNotificationCount,
+	fetchNotifications,
+	markNotificationRead,
 	selectedOption,
 	setSelectedOption,
 	online,
@@ -179,6 +193,11 @@ export default function Header({
 	const [showNotifications, setShowNotifications] = useState(false);
 	const [showProfile, setShowProfile] = useState(false);
 	const searchInputRef = useRef<TextInput>(null);
+
+	const unreadCount =
+		typeof unreadNotificationCount === 'number'
+			? unreadNotificationCount
+			: notifications.filter((n) => !n.isRead).length;
 
 	const featuresCopy =
 		translations[language]?.categories?.features ??
@@ -307,6 +326,8 @@ export default function Header({
 		{},
 		'notificationsCountBackground'
 	);
+	const errorColor = useThemeColor({}, 'error');
+	const whiteColor = useThemeColor({}, 'white');
 	const bimLight = useThemeColor({}, 'bim', 'light');
 	const bimDark = useThemeColor({}, 'bim', 'dark');
 	const authButtonTextLight = useThemeColor({}, 'authButtonText', 'light');
@@ -371,10 +392,8 @@ export default function Header({
 	]);
 
 	return (
-		<ThemedView
-			lightColor={headerBackground}
-			darkColor={headerBackground}
-			style={[styles.container]}
+		<View
+			style={[styles.container, { backgroundColor: headerBackground }]}
 		>
 			<Animated.View
 				style={{
@@ -468,29 +487,41 @@ export default function Header({
 					/>
 				</TouchableOpacity>
 				<TouchableOpacity
-					onPress={() =>
-						selectedOption === 'notifications'
-							? setSelectedOption(undefined)
-							: setSelectedOption('notifications')
-					}
+					accessibilityRole='button'
+					accessibilityLabel={`${
+						translations[language].categories.notifications.title
+					}${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
+					onPress={() => {
+						const opening = selectedOption !== 'notifications';
+						setSelectedOption(
+							opening ? 'notifications' : undefined
+						);
+						if (opening) void fetchNotifications?.();
+					}}
 				>
-					{notifications &&
-						notifications.length > 0 &&
-						notifications.filter((n) => !n.isRead).length > 0 ? (
-						<IconSymbol
-							name='notifications.outline.badge'
-							size={24}
-							color={headerIcons}
-							style={{ marginRight: 10 }}
-						/>
-					) : (
+					<View style={styles.bellContainer}>
 						<IconSymbol
 							name='notifications.outline'
 							size={24}
 							color={headerIcons}
-							style={{ marginRight: 10 }}
 						/>
-					)}
+						{unreadCount > 0 ? (
+							<View
+								style={[
+									styles.bellBadge,
+									{ backgroundColor: errorColor },
+								]}
+							>
+								<ThemedText
+									lightColor={whiteColor}
+									darkColor={whiteColor}
+									style={styles.bellBadgeText}
+								>
+									{unreadCount > 99 ? '99+' : unreadCount}
+								</ThemedText>
+							</View>
+						) : null}
+					</View>
 				</TouchableOpacity>
 				<TouchableOpacity
 					style={{
@@ -510,6 +541,7 @@ export default function Header({
 				id='header-search-results'
 				visible={showSearchResults}
 				fadeAnim={searchAnimValue}
+				top={HEADER_BOTTOM}
 			>
 				<ScrollView
 					style={{ maxHeight: 280, backgroundColor: headerDropdownBackground }}
@@ -592,6 +624,7 @@ export default function Header({
 				id='header-language'
 				visible={showLanguageSelection}
 				fadeAnim={languageAnimValue}
+				top={HEADER_BOTTOM}
 			>
 				<ScrollView
 					style={{
@@ -648,6 +681,8 @@ export default function Header({
 				id='header-notifications'
 				visible={showNotifications}
 				fadeAnim={notificationsAnimValue}
+				maxHeight={420}
+				top={HEADER_BOTTOM}
 			>
 				<ThemedView
 					style={{
@@ -675,35 +710,33 @@ export default function Header({
 						>
 							{translations[language].categories.notifications.title}
 						</ThemedText>
-						<View
-							style={{
-								boxSizing: 'border-box',
-								flexDirection: 'row',
-								paddingHorizontal: 6.5,
-								alignItems: 'center',
-								justifyContent: 'center',
-								borderRadius: 80,
-								backgroundColor: notificationsCountBackground,
-							}}
-						>
-							<ThemedText
+						{unreadCount > 0 ? (
+							<View
 								style={{
-									fontSize: fontSize['text.xsmall'],
-									fontWeight: 500,
-									padding: 0,
-									margin: 0,
+									boxSizing: 'border-box',
+									flexDirection: 'row',
+									paddingHorizontal: 6.5,
+									alignItems: 'center',
+									justifyContent: 'center',
+									borderRadius: 80,
+									backgroundColor: notificationsCountBackground,
 								}}
-								lightColor={notificationsCount}
-								darkColor={notificationsCount}
 							>
-								{notifications &&
-									notifications.length > 0 &&
-									notifications.filter((n) => !n.isRead).length > 0
-									? notifications.filter((n) => !n.isRead).length
-									: '0'}{' '}
-								New
-							</ThemedText>
-						</View>
+								<ThemedText
+									style={{
+										fontSize: fontSize['text.xsmall'],
+										fontWeight: 500,
+										padding: 0,
+										margin: 0,
+									}}
+									lightColor={notificationsCount}
+									darkColor={notificationsCount}
+								>
+									{unreadCount}{' '}
+									{translations[language].categories.notifications.new}
+								</ThemedText>
+							</View>
+						) : null}
 					</ThemedView>
 					<ThemedView
 						style={{
@@ -714,44 +747,92 @@ export default function Header({
 					>
 						{/* Display notifications here last 5 */}
 						{notifications && notifications.length > 0 ? (
-							notifications.slice(0, 5).map((notification, index) => (
-								<TouchableOpacity
-									key={index}
-									onPress={() => {
-										const isRead = notification.isRead;
-										if (!isRead) {
-											const currentNotifications = notifications.map((n) =>
-												n.id === notification.id ? { ...n, isRead: true } : n
-											);
-											setNotifications(currentNotifications);
-										}
-										router.push({
-											pathname: '/(authenticated)/notifications',
-											params: { notificationId: notification.id },
-										});
-										setSelectedOption(undefined);
-									}}
-									style={{
-										borderBottomColor: border,
-										borderTopColor: border,
-										backgroundColor: listItemBackground,
-										borderTopWidth: index === 0 ? 1 : 0,
-										paddingVertical: 0,
-										paddingHorizontal: 5,
-										borderBottomWidth: 1,
-									}}
-									activeOpacity={0.7}
-								>
-									<ThemedText
-										key={index}
-										style={{
-											fontSize: fontSize['text.small'],
-										}}
-									>
-										{notification.message}
-									</ThemedText>
-								</TouchableOpacity>
-							))
+							<ScrollView
+								style={{ maxHeight: 220 }}
+								nestedScrollEnabled
+								showsVerticalScrollIndicator
+							>
+								{notifications.slice(0, 5).map((notification, index) => {
+									const isUnread = !notification.isRead;
+									return (
+										<TouchableOpacity
+											key={notification.id || index}
+											onPress={() => {
+												if (markNotificationRead) {
+													void markNotificationRead(notification.id);
+												} else {
+													setNotifications((prev) =>
+														prev.map((n) =>
+															n.id === notification.id
+																? { ...n, isRead: true }
+																: n
+														)
+													);
+												}
+												const route = resolveNotificationRoute(
+													notification.link?.app || notification.link?.web
+												);
+												router.push(route as never);
+												setSelectedOption(undefined);
+											}}
+											style={{
+												borderBottomColor: border,
+												borderTopColor: border,
+												backgroundColor: listItemBackground,
+												borderTopWidth: index === 0 ? 1 : 0,
+												paddingVertical: 8,
+												paddingHorizontal: 8,
+												borderBottomWidth: 1,
+											}}
+											activeOpacity={0.7}
+										>
+											<View
+												style={{
+													flexDirection: 'row',
+													alignItems: 'center',
+													gap: 6,
+												}}
+											>
+												{isUnread ? (
+													<View
+														style={{
+															width: 6,
+															height: 6,
+															borderRadius: 3,
+															backgroundColor: errorColor,
+														}}
+													/>
+												) : null}
+												<ThemedText
+													numberOfLines={1}
+													style={{
+														flex: 1,
+														fontSize: fontSize['text.small'],
+														fontWeight: isUnread ? '600' : '400',
+													}}
+													lightColor={textColor}
+													darkColor={textColor}
+												>
+													{notification.title || notification.message}
+												</ThemedText>
+											</View>
+											{notification.title ? (
+												<ThemedText
+													numberOfLines={2}
+													style={{
+														fontSize: fontSize['text.xsmall'],
+														paddingLeft: isUnread ? 12 : 0,
+													}}
+													lightColor={mutedTextColor}
+													darkColor={mutedTextColor}
+												>
+													{notification.message}
+												</ThemedText>
+											) : null}
+										</TouchableOpacity>
+									);
+								})}
+							</ScrollView>
 						) : (
 							<ThemedText
 								lightColor={textColor}
@@ -804,6 +885,7 @@ export default function Header({
 				id='header-profile'
 				visible={showProfile}
 				fadeAnim={profileAnimValue}
+				top={HEADER_BOTTOM}
 			>
 				<>
 					<ThemedView
@@ -933,7 +1015,7 @@ export default function Header({
 					</ThemedView>
 				</>
 			</HeaderDropDownContainer>
-		</ThemedView>
+		</View>
 	);
 }
 
@@ -947,6 +1029,26 @@ const styles = StyleSheet.create({
 		marginTop: Platform.OS === 'ios' ? 50 : 40,
 		width: '100%',
 		paddingHorizontal: 10,
-		zIndex: 10, // Ensure it's above other content
+		zIndex: 1000, // Keep the open dropdowns above the screen content
+	},
+	bellContainer: {
+		position: 'relative',
+		marginRight: 10,
+	},
+	bellBadge: {
+		position: 'absolute',
+		top: -5,
+		right: -8,
+		minWidth: 16,
+		height: 16,
+		paddingHorizontal: 4,
+		borderRadius: 8,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	bellBadgeText: {
+		fontSize: 9,
+		lineHeight: 12,
+		fontWeight: '600',
 	},
 });

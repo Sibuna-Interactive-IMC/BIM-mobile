@@ -20,6 +20,11 @@ type PortalContextValue = {
 
 const PortalContext = React.createContext<PortalContextValue | null>(null);
 
+/** True when a `PortalProvider` is mounted (Storybook/tests may omit it). */
+export function usePortalAvailable() {
+	return React.useContext(PortalContext) !== null;
+}
+
 export function PortalProvider({ children }: { children: ReactNode }) {
 	const nextKeyRef = useRef(0);
 	const [entries, setEntries] = useState<PortalEntry[]>([]);

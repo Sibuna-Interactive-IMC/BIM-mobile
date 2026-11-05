@@ -221,6 +221,9 @@ export default function DrawerLayout() {
 		setLanguage,
 		notifications,
 		setNotifications,
+		unreadNotificationCount,
+		fetchNotifications,
+		markNotificationRead,
 		selectedOption,
 		setSelectedOption,
 		online,
@@ -276,6 +279,9 @@ export default function DrawerLayout() {
 								setLanguage={setLanguage}
 								notifications={notifications}
 								setNotifications={setNotifications}
+								unreadNotificationCount={unreadNotificationCount}
+								fetchNotifications={fetchNotifications}
+								markNotificationRead={markNotificationRead}
 								selectedOption={selectedOption}
 								setSelectedOption={setSelectedOption}
 								online={online}

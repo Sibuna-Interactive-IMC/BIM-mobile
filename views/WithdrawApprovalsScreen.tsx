@@ -36,7 +36,7 @@ type PendingDecision =
 export default function WithdrawApprovalsScreen() {
 	useTrackHistory('/(authenticated)/withdraw-approvals');
 	useAccountsBack();
-	const { language, authToken } = useGeneral();
+	const { language, authToken, refreshDashboard } = useGeneral();
 	const t = translations[language].categories.withdrawApprovals;
 	const buttons = translations[language].categories.buttons;
 	const loadingCopy = translations[language].categories.dashboard.loading;
@@ -150,13 +150,14 @@ export default function WithdrawApprovalsScreen() {
 				return;
 			}
 			await load();
+			void refreshDashboard?.(true);
 		} catch (e) {
 			console.error('[WithdrawApprovalsScreen] decision failed', e);
 			ShowAlert(t.actionFailed, 'Error');
 		} finally {
 			setPendingKey(null);
 		}
-	}, [authToken, closePrompt, load, t.actionFailed]);
+	}, [authToken, closePrompt, load, refreshDashboard, t.actionFailed]);
 
 	const requestFields = (transaction?: ApiTransaction | null): RecordField[] => [
 		{

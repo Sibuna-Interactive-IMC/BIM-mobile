@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import { render, waitFor } from '@testing-library/react-native';
-import React from 'react';
+import React, { act } from 'react';
 
 import Header from '@/components/Header';
 import type { User } from '@/types';
@@ -123,5 +123,60 @@ describe('header feature search', () => {
 		await waitFor(() =>
 			expect(getByTestId('header-search-result-profit')).toBeTruthy()
 		);
+	});
+});
+
+describe('header notification bell', () => {
+	beforeEach(() => {
+		mockPush.mockClear();
+	});
+
+	it('shows the unread badge and marks a row read when it is opened', async () => {
+		const markNotificationRead = jest.fn(async () => undefined);
+		const fetchNotifications = jest.fn(async () => undefined);
+
+		const { getByText } = render(
+			<Header
+				user={admin}
+				handleLogout={jest.fn()}
+				language='en'
+				setLanguage={jest.fn()}
+				notifications={[
+					{
+						id: 'inbox-1',
+						from: '',
+						to: '',
+						type: 'alert',
+						title: 'Approval needed',
+						message: 'A withdrawal is waiting for you',
+						isRead: false,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					},
+				]}
+				setNotifications={jest.fn()}
+				unreadNotificationCount={1}
+				fetchNotifications={fetchNotifications}
+				markNotificationRead={markNotificationRead}
+				selectedOption='notifications'
+				setSelectedOption={jest.fn()}
+				online={true}
+			/>
+		);
+
+		await waitFor(() => expect(getByText('1')).toBeTruthy());
+		await waitFor(() => expect(getByText('Approval needed')).toBeTruthy());
+
+		fireEvent.press(getByText('Approval needed'));
+
+		expect(markNotificationRead).toHaveBeenCalledWith('inbox-1');
+		expect(mockPush).toHaveBeenCalledWith('/(authenticated)/notifications');
+
+		// Let the dropdown's open animation and visibility timers finish before
+		// the Jest environment tears down (React Native schedules those with
+		// timers that outlive a synchronous test).
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 350));
+		});
 	});
 });

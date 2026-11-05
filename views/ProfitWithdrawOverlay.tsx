@@ -46,7 +46,7 @@ export default function ProfitWithdrawOverlay({
 	onClose: () => void;
 	onSubmitted: () => void;
 }) {
-	const { language } = useGeneral();
+	const { language, refreshDashboard } = useGeneral();
 	const t = translations[language].categories.profit;
 	const buttons = translations[language].categories.buttons;
 
@@ -163,6 +163,8 @@ export default function ProfitWithdrawOverlay({
 			);
 			onSubmitted();
 			onClose();
+			// Refresh the dashboard so the profit approval banner appears at once.
+			void refreshDashboard?.(true);
 		} catch (e) {
 			console.error('[ProfitWithdraw] submit failed', e);
 			ShowAlert(t.actionFailed, 'Error');
@@ -177,6 +179,7 @@ export default function ProfitWithdrawOverlay({
 		provider,
 		recipient,
 		reference,
+		refreshDashboard,
 		t.actionFailed,
 		t.otpRequired,
 		t.withdrawPending,

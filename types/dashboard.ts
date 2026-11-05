@@ -27,7 +27,27 @@ export interface RecentTransaction {
 	gateway?: string | null;
 }
 
-export interface DashboardSummary {
+/**
+ * Per-user approval widgets the backend merges into `GET /dashboard`, so the
+ * dashboard can show the same banners as the web without extra requests.
+ */
+export interface DashboardApprovalCounts {
+	/** Owner withdrawals waiting for this login's sign-off. */
+	pendingApprovalCount?: number;
+	/** This login's own withdrawals still waiting for other approvers. */
+	myPendingCount?: number;
+	/** Profit withdrawals waiting for this login's sign-off. */
+	profitPendingApprovalCount?: number;
+	/** This login's own profit withdrawals still waiting for other admins. */
+	myProfitPendingCount?: number;
+	pendingApprovals?: {
+		id: number | string;
+		router_name?: string;
+		amount?: number;
+	}[];
+}
+
+export interface DashboardSummary extends DashboardApprovalCounts {
 	chartData: ChartDataEntry[];
 	monthTransactions?: number;
 	monthUsers: number;
