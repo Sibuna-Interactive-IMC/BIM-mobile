@@ -125,6 +125,12 @@ apart.
 The same icon names apply to `ThemedButton`'s `icon` prop (e.g. `icon='plus'`
 on a create button).
 
+`ThemedButton` falls back to the theme's `tint` background and `text` foreground,
+which are not reliably legible as a pair (in the dark theme `tint` is white).
+Always pass `lightColor`/`darkColor` **and** the matching
+`lightTextColor`/`darkTextColor`, plus `iconColor` when the glyph should not
+inherit the label colour — e.g. `bim` background with a `white` label.
+
 Icons are restricted to `IconSymbolName` — the keys of `MAPPING` in
 `components/ui/IconSymbol.tsx`. If a glyph is missing, add an entry there
 (MaterialCommunity / Material / Ionicon) instead of inventing a name.

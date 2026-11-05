@@ -1,9 +1,9 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { RecordCard, RecordList } from '@/components/RecordList';
 import type { RecordAction, RecordField } from '@/components/RecordList';
+import { RecordCard, RecordList } from '@/components/RecordList';
 import ScreenHeader from '@/components/ScreenHeader';
-import TileContainer from '@/components/TileContainer';
 import { ThemedButton } from '@/components/ThemedButton';
+import TileContainer from '@/components/TileContainer';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { formatDateTime, translateWithVariables } from '@/helpers';
@@ -11,8 +11,8 @@ import {
 	NOTIFICATIONS_ROUTE,
 	resolveNotificationRoute,
 } from '@/helpers/pushNotifications';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import useHeaderBack from '@/hooks/useHeaderBack';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import type { notifications as NotificationItem } from '@/types';
 import { useRouter } from 'expo-router';
@@ -37,6 +37,8 @@ export default function NotificationsScreen() {
 	const [markingAll, setMarkingAll] = useState(false);
 
 	const background = useThemeColor({}, 'background');
+	const white = useThemeColor({}, 'white');
+	const bim = useThemeColor({}, 'bim');
 
 	useEffect(() => {
 		void fetchNotifications();
@@ -96,8 +98,8 @@ export default function NotificationsScreen() {
 					description={
 						unreadNotificationCount > 0
 							? translateWithVariables(t.unreadCount, {
-									count: unreadNotificationCount,
-								})
+								count: unreadNotificationCount,
+							})
 							: t.allRead
 					}
 					action={
@@ -109,6 +111,11 @@ export default function NotificationsScreen() {
 								onPress={() => void handleMarkAll()}
 								style={styles.markAllButton}
 								textStyle={styles.markAllText}
+								lightColor={bim}
+								darkColor={bim}
+								lightTextColor={white}
+								darkTextColor={white}
+								iconColor={white}
 							/>
 						) : undefined
 					}
