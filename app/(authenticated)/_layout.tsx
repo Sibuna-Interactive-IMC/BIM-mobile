@@ -248,7 +248,7 @@ export default function DrawerLayout() {
 		}
 	}, [authToken, verifyingAuth, router]);
 
-	// The global auth overlay in the root layout covers the no-token state.
+	// The global auth overlay in the root layout covers boot-time verification.
 	if (!authToken) {
 		return null;
 	}
