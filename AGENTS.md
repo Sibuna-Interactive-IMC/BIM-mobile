@@ -75,6 +75,20 @@ them (a `setTimeout`, animation frame, etc.) makes the portal render the previou
 node for a macrotask. Any controlled input inside an overlay then flashes its
 old value and silently drops characters when typed into quickly.
 
+`OverlayContainer` owns the keyboard handling: it reserves keyboard space at the
+bottom of its container (Android runs edge-to-edge, so `adjustResize` no longer
+shrinks the window) — a centred card lifts only as far as the keyboard requires,
+so a short form never floats high above it. It also keeps the keyboard up while
+its `ScrollView` scrolls and scrolls the focused input into view. Do not add a
+`KeyboardAvoidingView` or another keyboard-inset padding inside an overlay — the
+keyboard gets counted twice and leaves a screen-sized gap under the content.
+
+It also renders the card's close affordance: pass `onRequestClose` and a labelled
+X appears in the top-right corner, wired to that handler, so Cancel at the
+bottom of a long form is never the only way out. Opt out with
+`showCloseButton={false}` when the card supplies its own close control or the
+card is not full width (e.g. `Prompt`).
+
 ## RecordCard actions — always an icon
 
 Every action on a `RecordCard` must carry an icon. Text-only action buttons are
@@ -124,6 +138,10 @@ Icons are restricted to `IconSymbolName` — the keys of `MAPPING` in
   `Translations` type only allows one level of nesting.
 - Only `en` is complete; other languages are partial placeholders, so add new
   keys to `en` only.
+- Modal card titles are **Title Case** (`Create Router`, `Withdraw Funds from
+  Router`, `Generate Bulk Vouchers`) — short articles and prepositions stay
+  lowercase, matching the web dashboard. Body copy, hints and prompts stay
+  sentence case.
 
 ## Data and API
 

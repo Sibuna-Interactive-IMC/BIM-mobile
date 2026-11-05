@@ -50,6 +50,7 @@ export default function VoucherQrPreview({
 			fadeAnim={fadeAnim}
 			position='center'
 			onRequestClose={onClose}
+			showCloseButton={false}
 			contentFill
 		>
 			<ThemedView

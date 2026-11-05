@@ -177,8 +177,7 @@ export default function RouterOverlay({
 			autoKeyboardInset
 			bottomPadding={12}
 			getScrollRef={(r) => (scrollRef.current = r)}
-			centerLiftOnKeyboard
-			centerLiftRatio={0.9}
+			onRequestClose={onCancel}
 			keyboardGap={20}
 		>
 			<ThemedView

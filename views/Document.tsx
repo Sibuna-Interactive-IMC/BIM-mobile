@@ -1,4 +1,3 @@
-import FormContainer from '@/components/FormContainer';
 import OverlayContainer from '@/components/OverlayContainer';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedDropdown } from '@/components/ThemedDropdown';
@@ -110,8 +109,9 @@ export default function Document({
 			showOverlay={visible}
 			fadeAnim={fadeAnim}
 			position='center'
+			onRequestClose={onCancel}
 		>
-			<FormContainer style={styles.kbContainer}>
+			<View style={styles.kbContainer}>
 				<ThemedView style={styles.card} lightColor={bg} darkColor={bg}>
 					<ThemedText
 						style={styles.title}
@@ -242,7 +242,7 @@ export default function Document({
 						)}
 					</View>
 				</ThemedView>
-			</FormContainer>
+			</View>
 		</OverlayContainer>
 	);
 }

@@ -90,7 +90,7 @@ export default function RouterToolsOverlay({
 							? translateWithVariables(t.sendCommandTitle, {
 									router: routerName,
 								})
-							: translateWithVariables(t.removeCookiesConfirm, {
+							: translateWithVariables(t.removeCookiesTitle, {
 									router: routerName,
 								})}
 					</ThemedText>

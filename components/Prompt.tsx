@@ -37,6 +37,7 @@ export default function Prompt({
 			fadeAnim={fadeAnim}
 			showOverlay={visible}
 			onRequestClose={onClose}
+			showCloseButton={false}
 		>
 			<ThemedView
 				style={{
