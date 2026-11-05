@@ -77,7 +77,7 @@ const SORT_QUERIES: Record<
 
 const STATUS_TONES: Record<VoucherStatus, RecordTone> = {
 	online: 'success',
-	active: 'info',
+	active: 'primary',
 	unused: 'default',
 	expired: 'warning',
 	disabled: 'danger',
@@ -286,15 +286,17 @@ const VoucherCard = memo(function VoucherCard({
 				{
 					label: packages.edit,
 					icon: 'edit.outline',
-					tone: 'warning',
+					tone: 'info',
+					iconOnly: true,
 					disabled: !!pendingAction,
 					onPress: () => onEdit(voucher),
 				},
 				disabled
 					? {
 							label: labels.enable,
-							icon: 'key',
+							icon: 'check',
 							tone: 'success',
+							iconOnly: true,
 							disabled: !!pendingAction,
 							loading: pendingAction === actionKey('enable'),
 							onPress: () => onRunAction('enable', voucher),
@@ -302,15 +304,17 @@ const VoucherCard = memo(function VoucherCard({
 					: {
 							label: labels.disable,
 							icon: 'block',
-							tone: 'danger',
+							tone: 'primary',
+							iconOnly: true,
 							disabled: !!pendingAction,
 							loading: pendingAction === actionKey('disable'),
 							onPress: () => onRunAction('disable', voucher),
 						},
 				{
 					label: labels.reset,
-					icon: 'clock',
-					tone: 'info',
+					icon: 'refresh',
+					tone: 'neutral',
+					iconOnly: true,
 					disabled: !!pendingAction,
 					loading: pendingAction === actionKey('reset'),
 					onPress: () => onReset(voucher),
@@ -319,6 +323,7 @@ const VoucherCard = memo(function VoucherCard({
 					label: packages.delete,
 					icon: 'delete.outline',
 					tone: 'danger',
+					iconOnly: true,
 					disabled: !!pendingAction,
 					loading: pendingAction === actionKey('delete'),
 					onPress: () => onDelete(voucher),
@@ -351,7 +356,8 @@ export default function VouchersScreen() {
 	const cancelButton = useThemeColor({}, 'cancelButton');
 	const dangerButton = useThemeColor({}, 'dangerButton');
 	const lime = useThemeColor({}, 'lime');
-	const lightBlue = useThemeColor({}, 'lightBlue');
+	const secondaryButton = useThemeColor({}, 'secondaryButton');
+	const blue = useThemeColor({}, 'blue');
 	const yellow = useThemeColor({}, 'yellow');
 	const error = useThemeColor({}, 'error');
 
@@ -817,10 +823,12 @@ export default function VouchersScreen() {
 		]
 	);
 
+	// Status colours mirror the web's chips: green online, orange active, grey
+	// unused, yellow expired, red disabled, blue total.
 	const statusTiles: { status: VoucherStatus; label: string; color: string }[] = [
 		{ status: 'online', label: t.online, color: lime },
 		{ status: 'active', label: t.active, color: bim },
-		{ status: 'unused', label: t.unused, color: lightBlue },
+		{ status: 'unused', label: t.unused, color: secondaryButton },
 		{ status: 'expired', label: t.expired, color: yellow },
 		{ status: 'disabled', label: t.disabled, color: error },
 	];
@@ -925,7 +933,7 @@ export default function VouchersScreen() {
 							id='voucher-stat-total'
 							label={t.total}
 							value={stats.total ?? 0}
-							color={textColor}
+							color={blue}
 							active={!statusFilter}
 							onPress={() => setStatusFilter(null)}
 						/>

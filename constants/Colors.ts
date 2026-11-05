@@ -9,6 +9,7 @@ const tintColorDark = '#ffffff';
 export const Colors = {
 	light: {
 		bim: '#EE8438',
+		blue: '#3C82F6',
 		yellow: '#FDB529',
 		lime: '#72E128',
 		lightBlue: '#29C5F9',
@@ -65,6 +66,7 @@ export const Colors = {
 	},
 	dark: {
 		bim: '#EE8438',
+		blue: '#3C82F6',
 		yellow: '#FDB529',
 		lime: '#72E128',
 		lightBlue: '#29C5F9',

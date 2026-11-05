@@ -85,7 +85,7 @@ jest.mock('@/services/PackageService', () => ({
 	fetchSharedProfiles: (...args: any[]) => mockFetchProfiles(...args),
 }));
 
-describe('VouchersScreen origin indicators', () => {
+describe('VouchersScreen', () => {
 	beforeEach(() => {
 		mockFetchVouchers.mockReset();
 		mockFetchRouters.mockReset();
@@ -160,5 +160,35 @@ describe('VouchersScreen origin indicators', () => {
 		expect(getByText('3333333')).toBeTruthy();
 		expect(getByLabelText('Manual')).toBeTruthy();
 		expect(getByLabelText('Trial')).toBeTruthy();
+	});
+
+	it('paints statuses with the web palette', async () => {
+		const { getByText, getAllByText } = render(<VouchersScreen />);
+
+		await waitFor(() => expect(getByText('active')).toBeTruthy());
+
+		const ink = (value: string) =>
+			StyleSheet.flatten(getByText(value).props.style as StyleProp<TextStyle>)
+				?.color;
+
+		// Web: active = primary orange, unused = secondary grey.
+		expect(ink('active')).toBe('#EE8438');
+		expect(
+			StyleSheet.flatten(
+				getAllByText('unused')[0].props.style as StyleProp<TextStyle>
+			)?.color
+		).toBe('#828393');
+	});
+
+	it('renders row actions as icon-only buttons with accessible names', async () => {
+		const { getAllByLabelText, queryAllByText } = render(<VouchersScreen />);
+
+		await waitFor(() => expect(getAllByLabelText('Edit').length).toBe(3));
+
+		// Four actions per card, matching the web's icon-only table row buttons.
+		['Edit', 'Disable', 'Reset', 'Delete'].forEach((name) => {
+			expect(getAllByLabelText(name)).toHaveLength(3);
+			expect(queryAllByText(name)).toHaveLength(0);
+		});
 	});
 });

@@ -75,11 +75,18 @@ them (a `setTimeout`, animation frame, etc.) makes the portal render the previou
 node for a macrotask. Any controlled input inside an overlay then flashes its
 old value and silently drops characters when typed into quickly.
 
-## RecordCard actions — always icon + label
+## RecordCard actions — always an icon
 
 Every action on a `RecordCard` must carry an icon. Text-only action buttons are
 not allowed: the icon is what tells users at a glance that a tile is
 interactive.
+
+Row actions that mirror the web's icon-only table buttons pass `iconOnly`: the
+glyph stays, the visible text is dropped, and `label` becomes the accessible
+name (`RecordCard` hands it to `ThemedButton` as `accessibilityLabel`). The
+vouchers list uses that mode with the web's colours — edit `info`, reset
+`neutral`, disable `primary`, delete `danger`, enable `success` — on a row of
+equal-width icon buttons.
 
 Page-level actions belong in the **header container**, not in a floating row
 between the header and the content: pass a single button as `ScreenHeader`'s

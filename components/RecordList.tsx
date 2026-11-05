@@ -20,6 +20,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 export type RecordTone =
 	| 'default'
 	| 'muted'
+	| 'primary'
 	| 'success'
 	| 'warning'
 	| 'danger'
@@ -37,6 +38,8 @@ export type RecordField = {
 
 export type RecordAction = {
 	label: string;
+	/** Drop the visible text and keep the glyph; `label` stays the accessible name. */
+	iconOnly?: boolean;
 	onPress: () => void;
 	icon?: IconSymbolName;
 	tone?: 'primary' | 'neutral' | 'success' | 'info' | 'warning' | 'danger';
@@ -53,6 +56,7 @@ function useToneColors() {
 	return {
 		default: useThemeColor({}, 'text'),
 		muted: useThemeColor({}, 'mutedText'),
+		primary: useThemeColor({}, 'bim'),
 		success: useThemeColor({}, 'lime'),
 		warning: useThemeColor({}, 'yellow'),
 		danger: useThemeColor({}, 'error'),
@@ -222,7 +226,8 @@ export function RecordCard({
 							return (
 								<ThemedButton
 									key={`${action.label}-${index}`}
-									title={action.label}
+									title={action.iconOnly ? undefined : action.label}
+									accessibilityLabel={action.label}
 									onPress={action.onPress}
 									icon={action.icon}
 									disabled={action.disabled}
