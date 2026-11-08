@@ -1,6 +1,51 @@
 # BIM-mobile
  BIM wifi business mobile app
 
+## Project summary
+
+BIM-mobile is the React Native companion to the BIM WiFi business dashboard. It
+connects staff and administrators to the BIM Laravel API for managing routers,
+sites, packages, vouchers, accounts, transactions, approvals, and related
+operations. The API endpoint and regional phone settings are supplied through
+environment configuration; `backend-api.json` records the API contract.
+
+### Architecture
+
+- **Application and navigation:** Expo SDK 53, React Native, and TypeScript.
+  Expo Router provides file-based routes under `app/`; authenticated route files
+  generally re-export their screen implementation from `views/`.
+- **Screens and shared UI:** Feature screens compose reusable components from
+  `components/` for headers, tiles, lists, forms, and overlays. User-facing
+  strings and supported translations are centralized in `constants/Trans.ts`.
+- **State and API access:** React context providers in `context/` hold shared
+  authentication, user, security, and transaction state. Domain-specific
+  modules in `services/` call the backend; `helpers/` contains shared API,
+  response parsing, permission, and feature-search logic. API payload types live
+  in `types/`.
+- **Native integrations:** Expo modules provide secure storage, device and
+  network information, and notifications. The app registers device tokens with
+  the backend, which delivers pushes through Firebase Cloud Messaging (FCM).
+  Android and iOS native projects and build configuration are in `android/` and
+  `ios/`.
+
+### Deployment and CI/CD
+
+GitHub Actions provides continuous integration and Android release delivery:
+
+- **CI** runs on pull requests and pushes to `develop` or `main`. It installs
+  dependencies with `npm ci`, then runs ESLint, Jest tests, and the TypeScript
+  check (`npx tsc --noEmit`).
+- **Android release** runs on pushes to `main` or by manual dispatch. It builds
+  a signed Android App Bundle (AAB), retains it as a workflow artifact for 14
+  days, and uploads it to a configurable Google Play track. Release signing,
+  Play publishing, and Firebase configuration are provided through GitHub
+  Actions secrets; the default Play upload is an internal-track draft.
+- **iOS:** the repository includes an iOS native project and configuration;
+  automated iOS release publishing is not configured in the current workflows.
+
+See [CI/CD](#cicd) below for workflow setup, required secrets, and release
+instructions.
+
 ## UI design language
 
 Tabs and record lists are shared primitives. Use them instead of ad-hoc tables so
@@ -65,7 +110,7 @@ Two workflows live in `.github/workflows`:
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `develop`/`main` | `npm ci`, lint, tests. The type check is advisory while the pre-existing `InternetPackage` errors remain. |
+| `ci.yml` | PRs, pushes to `develop`/`main` | `npm ci`, lint, tests, and `npx tsc --noEmit`. |
 | `android-release.yml` | push to `main`, or manual dispatch | builds a signed `.aab` and uploads it to Google Play |
 
 ### One-time setup
