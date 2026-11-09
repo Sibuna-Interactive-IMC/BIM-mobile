@@ -58,11 +58,30 @@ export async function fetchAdminDocuments(
 	});
 }
 
-/** `POST /documents/{document}/approve` — admin/staff only; flips the status. */
+/**
+ * `POST /documents/{document}/approve` — admin/staff only; approves the
+ * document and marks its owner documents-verified.
+ */
 export async function approveDocument(documentId: string, token?: string) {
 	return apiFetch(
 		`${apiBaseUrl || ''}/documents/${encodeURIComponent(documentId)}/approve`,
 		{ method: 'POST', headers: buildHeaders(token) }
+	);
+}
+
+/** `POST /documents/{document}/reject` — admin/staff only; flips the status. */
+export async function rejectDocument(documentId: string, token?: string) {
+	return apiFetch(
+		`${apiBaseUrl || ''}/documents/${encodeURIComponent(documentId)}/reject`,
+		{ method: 'POST', headers: buildHeaders(token) }
+	);
+}
+
+/** `DELETE /documents/{document}` — removes the document record. */
+export async function deleteDocument(documentId: string, token?: string) {
+	return apiFetch(
+		`${apiBaseUrl || ''}/documents/${encodeURIComponent(documentId)}`,
+		{ method: 'DELETE', headers: buildHeaders(token) }
 	);
 }
 
@@ -103,6 +122,8 @@ export async function setUserDocumentsVerified(
 export default {
 	fetchAdminDocuments,
 	approveDocument,
+	rejectDocument,
+	deleteDocument,
 	downloadDocumentFile,
 	setUserDocumentsVerified,
 };

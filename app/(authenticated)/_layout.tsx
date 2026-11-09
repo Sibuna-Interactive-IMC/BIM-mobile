@@ -22,6 +22,12 @@ import { useRouter } from 'expo-router';
 // use a runtime require to access DrawerContentScrollView to avoid missing type exports
 import { Platform, TouchableOpacity, View } from 'react-native';
 
+const ADMIN_DRAWER_ROUTES = new Set([
+	'broadcasts',
+	'router-tools',
+	'document-verification',
+]);
+
 function CustomDrawerContent(props: any) {
 	const drawerBackground = useThemeColor({}, 'drawerBackground');
 	const drawerActiveBackground = useThemeColor({}, 'drawerActiveBackground');
@@ -55,6 +61,162 @@ function CustomDrawerContent(props: any) {
 			]),
 		[isAdmin]
 	);
+	const visibleRoutes = state.routes
+		.map((route: any, index: number) => ({ route, index }))
+		.filter(
+			({ route }: { route: any }) =>
+				allowedRoutes.has(route.name) &&
+				descriptors[route.key].options.drawerItemStyle?.display !== 'none'
+		);
+	const commonRoutes = visibleRoutes.filter(
+		({ route }: { route: any }) => !ADMIN_DRAWER_ROUTES.has(route.name)
+	);
+	const adminRoutes = visibleRoutes.filter(
+		({ route }: { route: any }) => ADMIN_DRAWER_ROUTES.has(route.name)
+	);
+	const renderRoute = ({ route, index }: { route: any; index: number }) => {
+		const { options } = descriptors[route.key];
+		const translatedNav = translations[language]?.categories
+			?.navigation as Record<string, string>;
+		const label =
+			options.drawerLabel ??
+			options.title ??
+			translatedNav?.[route.name] ??
+			route.name;
+		const isActive = index === activeIndex;
+		const activeBg =
+			options.drawerActiveBackgroundColor ?? drawerActiveBackground;
+		const inactiveBg =
+			options.drawerInactiveBackgroundColor ?? drawerButtonBackground;
+		const iconColor = isActive
+			? options.drawerActiveTintColor ?? drawerItem
+			: options.drawerInactiveTintColor ?? drawerInactiveItem;
+		let icon: React.ReactNode = null;
+		switch (route.name) {
+			case 'home':
+				icon = <IconSymbol size={24} name='home.outline' color={iconColor} />;
+				break;
+			case 'routers':
+				icon = <IconSymbol size={24} name='routers.outline' color={iconColor} />;
+				break;
+			case 'packages':
+				icon = <IconSymbol size={24} name='packages' color={iconColor} />;
+				break;
+			case 'vouchers':
+				icon = <IconSymbol size={24} name='vouchers' color={iconColor} />;
+				break;
+			case 'accounts':
+				icon = <IconSymbol size={24} name='accounts' color={iconColor} />;
+				break;
+			case 'transactions':
+				icon = <IconSymbol size={24} name='transactions' color={iconColor} />;
+				break;
+			case 'withdraw':
+				icon = <IconSymbol size={24} name='withdrawal' color={iconColor} />;
+				break;
+			case 'connector':
+				icon = <IconSymbol size={24} name='key' color={iconColor} />;
+				break;
+			case 'access':
+				icon = <IconSymbol size={24} name='users' color={iconColor} />;
+				break;
+			case 'broadcasts':
+				icon = <IconSymbol size={24} name='broadcast' color={iconColor} />;
+				break;
+			case 'router-tools':
+				icon = <IconSymbol size={24} name='tools.outline' color={iconColor} />;
+				break;
+			case 'document-verification':
+				icon = (
+					<IconSymbol size={24} name='document-verified' color={iconColor} />
+				);
+				break;
+			case 'documents':
+				icon = <IconSymbol size={24} name='documents' color={iconColor} />;
+				break;
+			case 'settings':
+				icon = <IconSymbol size={24} name='settings' color={iconColor} />;
+				break;
+			default:
+				icon = null;
+		}
+
+		return (
+			<TouchableOpacity
+				key={route.key}
+				style={{
+					backgroundColor: isActive ? activeBg : inactiveBg,
+					borderRadius: 5,
+					margin: 0,
+					padding: 0,
+				}}
+				onPress={() => navigation.navigate(route.name)}
+			>
+				<ThemedView
+					style={{
+						flexDirection: 'row',
+						alignItems: 'center',
+						padding: 16,
+					}}
+					lightColor='transparent'
+					darkColor='transparent'
+				>
+					{icon}
+					<ThemedView
+						style={{ marginLeft: 16 }}
+						lightColor='transparent'
+						darkColor='transparent'
+					>
+						{typeof label === 'string' ? (
+							<ThemedText
+								style={{
+									color: isActive
+										? options.drawerActiveTintColor ?? drawerItem
+										: options.drawerInactiveTintColor ?? drawerInactiveItem,
+									fontWeight: isActive
+										? options.drawerActiveFontWeight ??
+											fontWeight['heading.one']
+										: options.drawerInactiveFontWeight ??
+											fontWeight['heading.three'],
+								}}
+								lightColor={
+									isActive
+										? options.drawerActiveTintColor ?? drawerItem
+										: options.drawerInactiveTintColor ?? drawerInactiveItem
+								}
+								darkColor={
+									isActive
+										? options.drawerActiveTintColor ?? drawerItem
+										: options.drawerInactiveTintColor ?? drawerInactiveItem
+								}
+							>
+								{label}
+							</ThemedText>
+						) : (
+							label
+						)}
+					</ThemedView>
+				</ThemedView>
+			</TouchableOpacity>
+		);
+	};
+	const renderGroupTitle = (title: string) => (
+		<ThemedText
+			style={{
+				color: drawerInactiveItem,
+				fontSize: fontSize['text.small'],
+				fontWeight: fontWeight['heading.one'],
+				paddingHorizontal: 16,
+				paddingTop: 16,
+				paddingBottom: 8,
+				textTransform: 'uppercase',
+			}}
+			lightColor={drawerInactiveItem}
+			darkColor={drawerInactiveItem}
+		>
+			{title}
+		</ThemedText>
+	);
 
 	return (
 		<DrawerContentScrollView
@@ -71,144 +233,22 @@ function CustomDrawerContent(props: any) {
 				<DrawerHeader navigation={navigation} />
 			</View>
 
-			{state.routes.map((route: any, i: number) => {
-				const { options } = descriptors[route.key];
-				const showItem = options.drawerItemStyle?.display !== 'none';
-				// Skip routes that are not explicitly allowed
-				if (!allowedRoutes.has(route.name)) return null;
-				// Derive a label: prefer explicit option, otherwise use translations by route name, fallback to route.name
-				const translatedNav = translations[language]?.categories
-					?.navigation as Record<string, string>;
-				const label =
-					options.drawerLabel ??
-					options.title ??
-					translatedNav?.[route.name] ??
-					route.name;
-				const isActive = i === activeIndex;
-				const activeBg =
-					options.drawerActiveBackgroundColor ?? drawerActiveBackground;
-				const inactiveBg =
-					options.drawerInactiveBackgroundColor ?? drawerButtonBackground;
-				const iconColor = isActive
-					? options.drawerActiveTintColor ?? drawerItem
-					: options.drawerInactiveTintColor ?? drawerInactiveItem;
-				let icon: React.ReactNode = null;
-				switch (route.name) {
-					case 'home':
-						icon = (
-							<IconSymbol size={24} name='home.outline' color={iconColor} />
-						);
-						break;
-					case 'routers':
-						icon = (
-							<IconSymbol size={24} name='routers.outline' color={iconColor} />
-						);
-						break;
-					case 'packages':
-						icon = <IconSymbol size={24} name='packages' color={iconColor} />;
-						break;
-					case 'vouchers':
-						icon = <IconSymbol size={24} name='vouchers' color={iconColor} />;
-						break;
-					case 'accounts':
-						icon = <IconSymbol size={24} name='accounts' color={iconColor} />;
-						break;
-					case 'transactions':
-						icon = (
-							<IconSymbol size={24} name='transactions' color={iconColor} />
-						);
-						break;
-					case 'withdraw':
-						icon = <IconSymbol size={24} name='withdrawal' color={iconColor} />;
-						break;
-					case 'connector':
-						icon = <IconSymbol size={24} name='key' color={iconColor} />;
-						break;
-					case 'access':
-						icon = <IconSymbol size={24} name='users' color={iconColor} />;
-						break;
-					case 'broadcasts':
-						icon = <IconSymbol size={24} name='broadcast' color={iconColor} />;
-						break;
-					case 'router-tools':
-						icon = <IconSymbol size={24} name='tools.outline' color={iconColor} />;
-						break;
-					case 'document-verification':
-						icon = (
-							<IconSymbol size={24} name='document-verified' color={iconColor} />
-						);
-						break;
-					case 'documents':
-						icon = <IconSymbol size={24} name='documents' color={iconColor} />;
-						break;
-					case 'settings':
-						icon = <IconSymbol size={24} name='settings' color={iconColor} />;
-						break;
-					default:
-						icon = null;
-				}
-				if (!showItem) {
-					return null;
-				}
-				return (
-					<TouchableOpacity
-						key={route.key}
-						style={{
-							backgroundColor: isActive ? activeBg : inactiveBg,
-							borderRadius: 5,
-							margin: 0,
-							padding: 0,
-						}}
-						onPress={() => navigation.navigate(route.name)}
-					>
-						<ThemedView
-							style={{
-								flexDirection: 'row',
-								alignItems: 'center',
-								padding: 16,
-							}}
-							lightColor='transparent'
-							darkColor='transparent'
-						>
-							{icon}
-							<ThemedView
-								style={{ marginLeft: 16 }}
-								lightColor='transparent'
-								darkColor='transparent'
-							>
-								{typeof label === 'string' ? (
-									<ThemedText
-										style={{
-											color: isActive
-												? options.drawerActiveTintColor ?? drawerItem
-												: options.drawerInactiveTintColor ?? drawerInactiveItem,
-											fontWeight: isActive
-												? options.drawerActiveFontWeight ??
-												  fontWeight['heading.one']
-												: options.drawerInactiveFontWeight ??
-												  fontWeight['heading.three'],
-										}}
-										lightColor={
-											isActive
-												? options.drawerActiveTintColor ?? drawerItem
-												: options.drawerInactiveTintColor ?? drawerInactiveItem
-										}
-										darkColor={
-											isActive
-												? options.drawerActiveTintColor ?? drawerItem
-												: options.drawerInactiveTintColor ?? drawerInactiveItem
-										}
-									>
-										{label}
-									</ThemedText>
-								) : (
-									label
-								)}
-							</ThemedView>
-						</ThemedView>
-					</TouchableOpacity>
-				);
-			})}
+			{commonRoutes.length ? (
+				<>
+					{renderGroupTitle(
+						translations[language].categories.navigation.commonGroup
+					)}
+					{commonRoutes.map(renderRoute)}
+				</>
+			) : null}
+			{adminRoutes.length ? (
+				<>
+					{renderGroupTitle(
+						translations[language].categories.navigation.adminGroup
+					)}
+					{adminRoutes.map(renderRoute)}
+				</>
+			) : null}
 		</DrawerContentScrollView>
 	);
 }

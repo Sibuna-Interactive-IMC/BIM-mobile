@@ -75,12 +75,14 @@ const documents = [
 
 const mockFetch = jest.fn();
 const mockApprove = jest.fn();
-const mockVerify = jest.fn();
+const mockReject = jest.fn();
+const mockDelete = jest.fn();
 jest.mock('@/services/DocumentVerificationService', () => ({
 	fetchAdminDocuments: (...args: any[]) => mockFetch(...args),
 	approveDocument: (...args: any[]) => mockApprove(...args),
+	rejectDocument: (...args: any[]) => mockReject(...args),
+	deleteDocument: (...args: any[]) => mockDelete(...args),
 	downloadDocumentFile: jest.fn(),
-	setUserDocumentsVerified: (...args: any[]) => mockVerify(...args),
 }));
 
 describe('DocumentVerificationScreen', () => {
@@ -88,7 +90,8 @@ describe('DocumentVerificationScreen', () => {
 		mockUser = { id: 1, platform: { is_admin: true } };
 		mockFetch.mockReset();
 		mockApprove.mockReset();
-		mockVerify.mockReset();
+		mockReject.mockReset();
+		mockDelete.mockReset();
 		mockFetch.mockResolvedValue({
 			ok: true,
 			json: async () => ({
@@ -116,14 +119,10 @@ describe('DocumentVerificationScreen', () => {
 		expect(getByText('CM123456')).toBeTruthy();
 	});
 
-	test('approving a document approves it and verifies the owner in one step', async () => {
+	test('approving a document also verifies the owner through the approval endpoint', async () => {
 		mockApprove.mockResolvedValue({
 			ok: true,
 			json: async () => ({ message: 'Document approved successfully' }),
-		});
-		mockVerify.mockResolvedValue({
-			ok: true,
-			json: async () => ({ message: 'Grace Nakato is now documents-verified.' }),
 		});
 
 		const { getAllByText, findByText } = render(<DocumentVerificationScreen />);
@@ -137,13 +136,10 @@ describe('DocumentVerificationScreen', () => {
 		await waitFor(() =>
 			expect(mockApprove).toHaveBeenCalledWith('uuid-1', 'token')
 		);
-		// Approving a KYC document IS the verification decision.
-		await waitFor(() =>
-			expect(mockVerify).toHaveBeenCalledWith(7, true, 'token')
-		);
+		expect(mockReject).not.toHaveBeenCalled();
 	});
 
-	test('View is offered on every document, Approve only on pending ones', async () => {
+	test('View is offered on every document, decisions only on pending ones', async () => {
 		const { getAllByText, queryAllByText } = render(
 			<DocumentVerificationScreen />
 		);
@@ -151,11 +147,9 @@ describe('DocumentVerificationScreen', () => {
 
 		// Two documents, both viewable.
 		expect(getAllByText('View').length).toBe(2);
-		// uuid-1 is pending; uuid-2 is already approved, so it is final.
+		// uuid-1 is pending; uuid-2 already has a final decision.
 		expect(getAllByText('Approve').length).toBe(1);
-		// The separate verification control is gone.
-		expect(queryAllByText('Verify owner').length).toBe(0);
-		expect(queryAllByText('Unverify').length).toBe(0);
+		expect(getAllByText('Reject').length).toBe(1);
 	});
 
 	test('an approved document offers no Approve, even when the owner is unverified', async () => {
@@ -182,6 +176,68 @@ describe('DocumentVerificationScreen', () => {
 		// Approval is final; the row stays view-only.
 		expect(getAllByText('View').length).toBe(1);
 		expect(queryAllByText('Approve').length).toBe(0);
+		expect(queryAllByText('Reject').length).toBe(0);
+	});
+
+	test('rejecting a pending document calls the reject endpoint', async () => {
+		mockReject.mockResolvedValue({
+			ok: true,
+			json: async () => ({ message: 'Document rejected successfully' }),
+		});
+
+		const { getAllByText, findByText } = render(<DocumentVerificationScreen />);
+		await waitFor(() => expect(mockFetch).toHaveBeenCalled());
+
+		await userEvent.press(getAllByText('Reject')[0]);
+		await findByText('Reject this document?');
+		await userEvent.press(getAllByText('CONFIRM')[0]);
+
+		await waitFor(() =>
+			expect(mockReject).toHaveBeenCalledWith('uuid-1', 'token')
+		);
+		expect(mockApprove).not.toHaveBeenCalled();
+	});
+
+	test('missing files are labeled, hide file actions, and can be deleted', async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				success: true,
+				documents: [
+					{ ...documents[0], file_missing: true },
+				],
+				documents_metadata: { current_page: 1, last_page: 1, total: 1 },
+			}),
+		});
+
+		const { getAllByText, queryAllByText } = render(
+			<DocumentVerificationScreen />
+		);
+		await waitFor(() => expect(mockFetch).toHaveBeenCalled());
+
+		expect(getAllByText('Missing file').length).toBeGreaterThan(0);
+		expect(queryAllByText('View')).toHaveLength(0);
+		expect(queryAllByText('Approve')).toHaveLength(0);
+		expect(queryAllByText('Reject')).toHaveLength(0);
+		expect(getAllByText('Delete').length).toBe(1);
+	});
+
+	test('deleting a document requires confirmation and removes it', async () => {
+		mockDelete.mockResolvedValue({
+			ok: true,
+			json: async () => ({ message: 'Document deleted successfully' }),
+		});
+
+		const { getAllByText, findByText } = render(<DocumentVerificationScreen />);
+		await waitFor(() => expect(mockFetch).toHaveBeenCalled());
+
+		await userEvent.press(getAllByText('Delete')[0]);
+		await findByText('Delete this document?');
+		await userEvent.press(getAllByText('CONFIRM')[0]);
+
+		await waitFor(() =>
+			expect(mockDelete).toHaveBeenCalledWith('uuid-1', 'token')
+		);
 	});
 
 	test('the filter request carries the chosen status and type', async () => {

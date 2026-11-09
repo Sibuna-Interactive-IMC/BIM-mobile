@@ -50,6 +50,21 @@ describe('document verification service', () => {
 		expect(init.method).toBe('POST');
 	});
 
+	test('rejectDocument posts to the per-document action', async () => {
+		await DocumentVerificationService.rejectDocument('uuid-1', 'token');
+		const [url, init] = calls()[0];
+		expect(url).toBe('https://api.example/documents/uuid-1/reject');
+		expect(init.method).toBe('POST');
+	});
+
+	test('deleteDocument deletes the per-document resource', async () => {
+		await DocumentVerificationService.deleteDocument('uuid-1', 'token');
+		const [url, init] = calls()[0];
+		expect(url).toBe('https://api.example/documents/uuid-1');
+		expect(init.method).toBe('DELETE');
+		expect(init.headers.Authorization).toContain('Bearer');
+	});
+
 	test('the file download carries the token and no JSON content type', async () => {
 		await DocumentVerificationService.downloadDocumentFile('uuid-1', 'token');
 		const [url, init] = calls()[0];
