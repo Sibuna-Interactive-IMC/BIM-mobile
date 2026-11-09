@@ -1624,6 +1624,8 @@ export interface AdminDocument {
 	number?: string | null;
 	/** Storage path; the file itself lives behind `GET /documents/{id}/file`. */
 	attachment?: string | null;
+	/** True when the database row's stored file is no longer available. */
+	file_missing?: boolean;
 	status: DocumentStatus;
 	user_id?: number | null;
 	created_at?: string | null;

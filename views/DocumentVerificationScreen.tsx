@@ -18,9 +18,10 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
 import {
 	approveDocument,
+	deleteDocument,
 	downloadDocumentFile,
 	fetchAdminDocuments,
-	setUserDocumentsVerified,
+	rejectDocument,
 } from '@/services/DocumentVerificationService';
 import type {
 	AdminDocument,
@@ -49,15 +50,16 @@ const DOCUMENT_TYPES = [
 	'TIN Certificate',
 ] as const;
 
-type PendingAction = { kind: 'approve'; document: AdminDocument };
+type PendingAction = {
+	kind: 'approve' | 'reject' | 'delete';
+	document: AdminDocument;
+};
 
 /**
  * `GET /admin/documents` — admin review of every document an owner uploaded.
  *
- * These are KYC documents, so approving one IS the verification decision: the
- * document is marked approved and its owner is flagged documents-verified in the
- * same step. There is no separate "verify owner" control, on this screen or in
- * the flow it replaces.
+ * Approving a document also marks its owner documents-verified. Rejection changes
+ * the document outcome without clearing an owner's existing verification.
  */
 export default function DocumentVerificationScreen() {
 	useTrackHistory('/(authenticated)/document-verification');
@@ -71,6 +73,7 @@ export default function DocumentVerificationScreen() {
 	const backgroundLight = useThemeColor({}, 'background', 'light');
 	const backgroundDark = useThemeColor({}, 'background', 'dark');
 	const bim = useThemeColor({}, 'bim');
+	const danger = useThemeColor({}, 'error');
 	const white = useThemeColor({}, 'white');
 	const cancelButton = useThemeColor({}, 'cancelButton');
 
@@ -232,38 +235,54 @@ export default function DocumentVerificationScreen() {
 		closePrompt();
 		setActing(true);
 		try {
-			// Approval is the KYC decision, so it is two writes: the document's own
-			// status, then the owner's verified flag. Both, or the review is half done.
-			const res = await approveDocument(document.id, authToken);
+			const action =
+				pending.kind === 'approve'
+					? approveDocument
+					: pending.kind === 'reject'
+						? rejectDocument
+						: deleteDocument;
+			const res = await action(document.id, authToken);
 			const body = await res.json().catch(() => null);
 			if (!res.ok) {
-				ShowAlert(getApiMessage(body) || t.approveFailed, 'Error');
+				const errorMessage =
+					pending.kind === 'approve'
+						? t.approveFailed
+						: pending.kind === 'reject'
+							? t.rejectFailed
+							: t.deleteFailed;
+				ShowAlert(
+					getApiMessage(body) || errorMessage,
+					'Error'
+				);
 				return;
 			}
 
-			const ownerId = Number(document.user?.id ?? 0);
-			if (ownerId) {
-				const verifyRes = await setUserDocumentsVerified(
-					ownerId,
-					true,
-					authToken
-				);
-				const verifyBody = await verifyRes.json().catch(() => null);
-				if (!verifyRes.ok) {
-					ShowAlert(
-						getApiMessage(verifyBody) || t.verifyStepFailed,
-						'Error'
-					);
-					await load(page, applied);
-					return;
-				}
-			}
-
-			ShowAlert(getApiMessage(body) || t.approved, 'Success');
+			const successMessage =
+				pending.kind === 'approve'
+					? t.approved
+					: pending.kind === 'reject'
+						? t.rejected
+						: t.deleted;
+			ShowAlert(
+				getApiMessage(body) || successMessage,
+				'Success'
+			);
 			await load(page, applied);
 		} catch (e) {
-			console.error('[DocumentVerificationScreen] approve failed', e);
-			ShowAlert(t.approveFailed, 'Error');
+			console.error(
+				`[DocumentVerificationScreen] ${pending.kind} failed`,
+				e
+			);
+			const errorMessage =
+				pending.kind === 'approve'
+					? t.approveFailed
+					: pending.kind === 'reject'
+						? t.rejectFailed
+						: t.deleteFailed;
+			ShowAlert(
+				errorMessage,
+				'Error'
+			);
 		} finally {
 			setActing(false);
 		}
@@ -276,7 +295,10 @@ export default function DocumentVerificationScreen() {
 		pending,
 		t.approved,
 		t.approveFailed,
-		t.verifyStepFailed,
+		t.deleteFailed,
+		t.deleted,
+		t.rejectFailed,
+		t.rejected,
 	]);
 
 	const fieldsOf = (document: AdminDocument): RecordField[] => {
@@ -301,13 +323,16 @@ export default function DocumentVerificationScreen() {
 	};
 
 	const badgeOf = (document: AdminDocument): RecordBadge => ({
-		label:
-			document.status === 'pending'
+		label: document.file_missing
+			? t.fileMissing
+			: document.status === 'pending'
 				? t.statusPending
 				: document.status === 'approved'
 					? t.statusApproved
 					: t.statusRejected,
-		tone: STATUS_TONES[document.status] ?? 'muted',
+		tone: document.file_missing
+			? 'danger'
+			: STATUS_TONES[document.status] ?? 'muted',
 	});
 
 	const promptButtons: PromptButton[] = [
@@ -319,7 +344,7 @@ export default function DocumentVerificationScreen() {
 		},
 		{
 			title: t.confirm,
-			color: bim,
+			color: pending?.kind === 'delete' ? danger : bim,
 			textColor: white,
 			action: () => {
 				void runPending();
@@ -328,11 +353,23 @@ export default function DocumentVerificationScreen() {
 	];
 
 	const prompt = {
-		title: t.approveTitle,
-		message: translateWithVariables(t.approveMessage, {
-			type: pending?.document.type ?? '',
-			owner: pending?.document.user?.name ?? t.deletedOwner,
-		}),
+		title:
+			pending?.kind === 'delete'
+				? t.deleteTitle
+				: pending?.kind === 'reject'
+					? t.rejectTitle
+					: t.approveTitle,
+		message: translateWithVariables(
+			pending?.kind === 'delete'
+				? t.deleteMessage
+				: pending?.kind === 'reject'
+					? t.rejectMessage
+					: t.approveMessage,
+			{
+				type: pending?.document.type ?? '',
+				owner: pending?.document.user?.name ?? t.deletedOwner,
+			}
+		),
 	};
 
 	return (
@@ -461,10 +498,11 @@ export default function DocumentVerificationScreen() {
 						>
 							{documents.map((document) => {
 								const owner = document.user;
-								// Approve is the verification step; an approved document is final,
-								// so the action disappears rather than repeating the decision.
-								const canApprove =
-									Boolean(owner) && document.status === 'pending';
+								// Decisions are available only while a document is pending.
+								const canDecide =
+									!document.file_missing &&
+									Boolean(owner) &&
+									document.status === 'pending';
 								return (
 									<RecordCard
 										key={document.id}
@@ -476,18 +514,39 @@ export default function DocumentVerificationScreen() {
 												: t.deletedOwner
 										}
 										badge={badgeOf(document)}
-										fields={fieldsOf(document)}
+										fields={[
+											...fieldsOf(document),
+											...(document.file_missing
+												? [
+														{
+															label: t.status,
+															value:
+																document.status === 'pending'
+																	? t.statusPending
+																	: document.status === 'approved'
+																		? t.statusApproved
+																		: t.statusRejected,
+															tone: STATUS_TONES[document.status],
+															fullWidth: true,
+														},
+													]
+												: []),
+										]}
 										actions={[
-											{
-												label: t.view,
-												icon: 'eye.outline',
-												tone: 'primary',
-												loading: openFileId === document.id,
-												onPress: () => {
-													void openFile(document);
-												},
-											},
-											...(canApprove
+											...(!document.file_missing
+												? [
+														{
+															label: t.view,
+															icon: 'eye.outline' as const,
+															tone: 'primary' as const,
+															loading: openFileId === document.id,
+															onPress: () => {
+																void openFile(document);
+															},
+														},
+													]
+												: []),
+											...(canDecide
 												? [
 														{
 															label: t.approve,
@@ -500,8 +559,30 @@ export default function DocumentVerificationScreen() {
 																setShowPrompt(true);
 															},
 														},
+														{
+															label: t.reject,
+															icon: 'close' as const,
+															tone: 'danger' as const,
+															disabled: acting,
+															onPress: () => {
+																setPending({ kind: 'reject', document });
+																promptFade.setValue(1);
+																setShowPrompt(true);
+															},
+														},
 													]
 												: []),
+											{
+												label: t.delete,
+												icon: 'delete.outline',
+												tone: 'danger',
+												disabled: acting,
+												onPress: () => {
+													setPending({ kind: 'delete', document });
+													promptFade.setValue(1);
+													setShowPrompt(true);
+												},
+											},
 										]}
 									/>
 								);

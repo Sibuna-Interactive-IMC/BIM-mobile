@@ -1405,7 +1405,7 @@ const translations: Translations = {
 			documentVerification: {
 				title: 'Document verification',
 				description:
-					'Every document uploaded by an owner. Open the file, approve it, then set the owner’s verification.',
+					'Review every document uploaded by an owner. Approving a document also verifies its owner.',
 				adminOnly: 'Only platform admins can review documents.',
 				search: 'Search',
 				searchPlaceholder: 'Owner, email, phone or number',
@@ -1436,14 +1436,24 @@ const translations: Translations = {
 				deletedOwner: 'Deleted owner',
 				view: 'View',
 				openFailed: 'Could not open that file.',
+				fileMissing: 'Missing file',
 				approve: 'Approve',
 				approveTitle: 'Approve this document?',
 				approveMessage:
-					'Mark this {type} for {owner} as approved? Approving a KYC document also marks the owner as documents-verified.',
+					'Mark this {type} for {owner} as approved? The owner will also be marked as verified.',
 				approved: 'Document approved and owner verified.',
 				approveFailed: 'Could not approve that document.',
-				verifyStepFailed:
-					'The document was approved, but the owner could not be marked verified. Approve it again to finish.',
+				reject: 'Reject',
+				rejectTitle: 'Reject this document?',
+				rejectMessage: 'Reject this {type} for {owner}?',
+				rejected: 'Document rejected.',
+				rejectFailed: 'Could not reject that document.',
+				delete: 'Delete',
+				deleteTitle: 'Delete this document?',
+				deleteMessage:
+					'Delete the {type} document for {owner}? This cannot be undone.',
+				deleted: 'Document deleted.',
+				deleteFailed: 'Could not delete that document.',
 				confirm: 'Confirm',
 				loadFailed: 'Could not load the documents.',
 			},
