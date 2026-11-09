@@ -1,5 +1,5 @@
-import { useIsFocused } from '@react-navigation/native';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 	ActivityIndicator,
 	Dimensions,
@@ -86,6 +86,27 @@ export default function HomeScreen() {
 
 	// explicitly track home page
 	useTrackHistory('/(authenticated)/home');
+
+	// The approval counters behind the dashboard banners change while the app is
+	// open elsewhere. Re-read them whenever the dashboard is focused again so a
+	// withdrawal approved on another device (or a new one waiting) is current
+	// without waiting for the 2-minute poll. The first focus is skipped because
+	// GeneralContext already loads the dashboard on sign-in.
+	const refreshDashboardRef = useRef(refreshDashboard);
+	useEffect(() => {
+		refreshDashboardRef.current = refreshDashboard;
+	}, [refreshDashboard]);
+	const dashboardFocusedRef = useRef(false);
+	useFocusEffect(
+		useCallback(() => {
+			if (!dashboardFocusedRef.current) {
+				dashboardFocusedRef.current = true;
+				return;
+			}
+			void refreshDashboardRef.current?.(true);
+		}, [])
+	);
+
 	const width = Dimensions.get('window').width;
 	const router = useRouter();
 	useColorScheme();

@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { RecordCard, RecordList } from '@/components/RecordList';
@@ -24,7 +25,7 @@ import type {
 	DisbursementRecord,
 	GetDisbursementRecordsResponse,
 } from '@/types';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, useAnimatedValue, View } from 'react-native';
 
 import DisbursementDocumentsOverlay from '@/views/DisbursementDocumentsOverlay';
@@ -143,9 +144,14 @@ export default function DisbursementRecordsScreen() {
 		}
 	}, [applied, authToken, page]);
 
-	useEffect(() => {
-		void load();
-	}, [load]);
+	// Reload whenever the screen regains focus: the drawer keeps it mounted, so
+	// a disbursement submitted after the first visit would otherwise stay
+	// hidden until a manual pull-to-refresh.
+	useFocusEffect(
+		useCallback(() => {
+			void load();
+		}, [load])
+	);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);

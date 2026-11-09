@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import ListPagination from '@/components/ListPagination';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
@@ -28,7 +29,7 @@ import type {
 	ProfitWithdrawalApproval,
 	PromptButton,
 } from '@/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
 	Animated,
 	StyleSheet,
@@ -107,9 +108,14 @@ export default function ProfitScreen() {
 		}
 	}, [authToken, isAdmin, page]);
 
-	useEffect(() => {
-		void load();
-	}, [load]);
+	// The drawer keeps this screen mounted, so loading only on mount would
+	// leave an approval that arrived while the user was elsewhere invisible
+	// until a manual pull-to-refresh.
+	useFocusEffect(
+		useCallback(() => {
+			void load();
+		}, [load])
+	);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);

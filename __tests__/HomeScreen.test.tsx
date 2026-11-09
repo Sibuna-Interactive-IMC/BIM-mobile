@@ -45,6 +45,11 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
 }));
 jest.mock('@react-navigation/native', () => ({
 	useIsFocused: () => true,
+	// No navigator in a unit render: run the focus callback like a mount effect.
+	useFocusEffect: (callback: () => void | (() => void)) => {
+		const { useEffect } = require('react');
+		useEffect(callback, [callback]);
+	},
 }));
 jest.mock('expo-router', () => ({
 	useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),

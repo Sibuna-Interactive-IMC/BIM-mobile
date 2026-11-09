@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import ScreenHeader from '@/components/ScreenHeader';import TileContainer from '@/components/TileContainer';
 import { ThemedText } from '@/components/ThemedText';
@@ -15,7 +16,7 @@ import { fetchAccountsSummary } from '@/services/AccountsService';
 import type { AccountsSummary, GetAccountsSummaryResponse } from '@/types';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 type HubTileConfig = {
@@ -136,9 +137,13 @@ export default function AccountsScreen() {
 		}
 	}, [authToken]);
 
-	useEffect(() => {
-		void loadSummary();
-	}, [loadSummary]);
+	// The hub's approval tile counts come from the server, so re-read them on
+	// focus: returning from an approval leaves the old number behind.
+	useFocusEffect(
+		useCallback(() => {
+			void loadSummary();
+		}, [loadSummary])
+	);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);

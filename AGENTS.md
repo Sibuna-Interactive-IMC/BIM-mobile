@@ -178,7 +178,10 @@ The backend fans out over FCM, so the app registers its own device token with
 
 - `hooks/usePushNotifications.ts` is mounted by
   `app/(authenticated)/_layout.tsx`. It asks for the OS permission, opens the
-  Android `default` channel, posts the device token, re-posts it when the token
+  Android `bim_approvals` channel (the id the backend targets — `push.fcm.android_channel`
+  / `FCM_ANDROID_CHANNEL` in `BIM-radius`; a message for a channel the app never
+  created is shown on expo-notifications' generic fallback channel instead),
+  posts the device token, re-posts it when the token
   rolls, and on a tap opens the route in the payload's `link.app`
   (`helpers/pushNotifications.ts` resolves it; unknown or stale links land on
   `/(authenticated)/notifications`).
