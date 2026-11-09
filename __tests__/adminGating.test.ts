@@ -85,6 +85,26 @@ describe('the drawer only shows admin routers to admins', () => {
 		});
 	});
 
+	test('the drawer separates admin-exclusive routes from common routes', () => {
+		const adminRoutes = layout.match(
+			/const ADMIN_DRAWER_ROUTES = new Set\(\[([\s\S]*?)\]\)/
+		)?.[1] ?? '';
+		const commonGroup = layout.slice(
+			layout.indexOf('const commonRoutes'),
+			layout.indexOf('const adminRoutes')
+		);
+
+		['broadcasts', 'router-tools', 'document-verification'].forEach((route) => {
+			expect(adminRoutes).toContain(`'${route}'`);
+		});
+		expect(commonGroup).toContain('!ADMIN_DRAWER_ROUTES.has(route.name)');
+		expect(layout).toContain('navigation.commonGroup');
+		expect(layout).toContain('navigation.adminGroup');
+		// Accounts includes both shared and admin-only destinations, so it remains
+		// in the common section.
+		expect(adminRoutes).not.toContain("'accounts'");
+	});
+
 	test('banks and the payment gateway are reached from Accounts, not the drawer', () => {
 		// Both moved under the Accounts hub, so neither may be in the drawer's
 		// allowlist (that set alone decides which links render) and neither needs a

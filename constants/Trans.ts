@@ -142,6 +142,8 @@ const translations: Translations = {
 				addPackage: 'Add Package',
 			},
 			navigation: {
+				commonGroup: 'General',
+				adminGroup: 'Administration',
 				home: 'Dashboard',
 				settings: 'Settings',
 				routers: 'Routers',
