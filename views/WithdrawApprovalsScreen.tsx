@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import Prompt from '@/components/Prompt';
 import { RecordCard, RecordList } from '@/components/RecordList';
@@ -24,7 +25,7 @@ import type {
 	PromptButton,
 	WithdrawalApproval,
 } from '@/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { StyleSheet, useAnimatedValue } from 'react-native';
 
 type PendingDecision =
@@ -82,9 +83,14 @@ export default function WithdrawApprovalsScreen() {
 		}
 	}, [authToken]);
 
-	useEffect(() => {
-		void load();
-	}, [load]);
+	// The drawer keeps this screen mounted: re-read the approvals whenever the
+	// screen is focused so a request that arrived after the first visit (a push
+	// tap, the dashboard banner) is listed without a manual refresh.
+	useFocusEffect(
+		useCallback(() => {
+			void load();
+		}, [load])
+	);
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);

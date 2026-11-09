@@ -19,8 +19,18 @@ import * as InboxService from '@/services/InboxService';
 import * as PushService from '@/services/PushService';
 import type { PushDevice, PushPlatform } from '@/types';
 
-/** Android channel the backend's FCM messages are delivered on. */
-const ANDROID_CHANNEL_ID = 'default';
+/**
+ * Android channel the backend's FCM messages are delivered on.
+ *
+ * Must match `push.fcm.android_channel` in the Laravel config
+ * (`FCM_ANDROID_CHANNEL`, default `bim_approvals`). A message whose
+ * `channel_id` has no matching channel does not use this app's channel, so
+ * its importance, sound and the user's per-category settings are all skipped.
+ */
+const ANDROID_CHANNEL_ID = 'bim_approvals';
+
+/** Channel earlier builds created; the backend targets `bim_approvals`. */
+const LEGACY_ANDROID_CHANNEL_ID = 'default';
 
 /**
  * Expo Go (the store client) cannot receive remote pushes from SDK 53 onwards;
@@ -54,6 +64,18 @@ async function ensureAndroidChannel(name: string, description?: string) {
 		importance: Notifications.AndroidImportance.HIGH,
 		lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
 	});
+
+	// Drop the channel earlier builds registered: nothing was ever delivered
+	// on it, so keeping it only adds a second entry to the app's notification
+	// settings.
+	const legacy = await Notifications.getNotificationChannelAsync(
+		LEGACY_ANDROID_CHANNEL_ID
+	).catch(() => null);
+	if (legacy) {
+		await Notifications.deleteNotificationChannelAsync(
+			LEGACY_ANDROID_CHANNEL_ID
+		).catch(() => {});
+	}
 }
 
 /** Apps can only be nudged once for the OS permission dialog; afterwards it is a settings toggle. */
@@ -73,19 +95,26 @@ async function ensureNotificationPermission(): Promise<boolean> {
  * and the install is unregistered from `GeneralContext.handleLogout`.
  */
 export default function usePushNotifications() {
-	const { authToken, language, fetchNotifications } = useGeneral();
+	const { authToken, language, fetchNotifications, refreshDashboard } =
+		useGeneral();
 	const router = useRouter();
 
 	// Token this session already registered, so a token refresh or a language
 	// change does not re-post the same device row.
 	const registeredTokenRef = useRef<string | null>(null);
 
-	// `fetchNotifications` is recreated on every provider render; keep the
-	// latest one reachable without re-subscribing the listeners.
+	// `fetchNotifications` and `refreshDashboard` are recreated on every
+	// provider render; keep the latest ones reachable without re-subscribing
+	// the listeners.
 	const fetchNotificationsRef = useRef(fetchNotifications);
 	useEffect(() => {
 		fetchNotificationsRef.current = fetchNotifications;
 	}, [fetchNotifications]);
+
+	const refreshDashboardRef = useRef(refreshDashboard);
+	useEffect(() => {
+		refreshDashboardRef.current = refreshDashboard;
+	}, [refreshDashboard]);
 
 	const openNotification = useCallback(
 		async (response: Notifications.NotificationResponse) => {
@@ -169,6 +198,10 @@ export default function usePushNotifications() {
 					token,
 					deviceId: device.id,
 				});
+				console.log('[push] device registered', {
+					platform: currentPlatform(),
+					deviceId: device.id,
+				});
 			} catch (error) {
 				console.warn('[push] device registration failed', error);
 			}
@@ -205,6 +238,9 @@ export default function usePushNotifications() {
 		const receivedSubscription = Notifications.addNotificationReceivedListener(
 			() => {
 				void fetchNotificationsRef.current();
+				// A push means the numbers behind the dashboard changed; the
+				// approval banner should not wait for the 2-minute poll.
+				void refreshDashboardRef.current?.(true);
 			}
 		);
 		const responseSubscription =

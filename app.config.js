@@ -116,7 +116,9 @@ export default ({ config }) => {
                     // the BIM wordmark by scripts/make-notification-icon.ps1.
                     icon: './assets/images/notification-icon.png',
                     color: '#EE8438',
-                    defaultChannel: 'default',
+                    // Must match push.fcm.android_channel in the Laravel config
+                    // (FCM_ANDROID_CHANNEL, default `bim_approvals`).
+                    defaultChannel: 'bim_approvals',
                 },
             ],
         ],
