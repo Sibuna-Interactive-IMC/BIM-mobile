@@ -1,0 +1,11 @@
+diff --git a/node_modules/@react-native-community/netinfo/android/src/main/java/com/reactnativecommunity/netinfo/NetInfoModule.java b/node_modules/@react-native-community/netinfo/android/src/main/java/com/reactnativecommunity/netinfo/NetInfoModule.java
+--- a/node_modules/@react-native-community/netinfo/android/src/main/java/com/reactnativecommunity/netinfo/NetInfoModule.java
++++ b/node_modules/@react-native-community/netinfo/android/src/main/java/com/reactnativecommunity/netinfo/NetInfoModule.java
+@@ -45,6 +45,7 @@
+     // the upstream method was removed in react-native 0.74
+     // this stub remains for backwards compatibility so that react-native < 0.74
+     // (which will still call onCatalystInstanceDestroy) will continue to function
++    @SuppressWarnings("removal")
+     public void onCatalystInstanceDestroy() {
+         invalidate();
+     }
