@@ -37,8 +37,37 @@ env:
   VERSION_CODE_OFFSET: ${{ vars.VERSION_CODE_OFFSET || '1000' }}
 
 jobs:
+  # Everything the bundle depends on must be green before a build starts. These
+  # are the same checks as ci.yml, run here as well so the Play upload is gated
+  # on them and the checks and the build never run at the same time.
+  verify:
+    name: Lint, typecheck and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Tests
+        run: npm test
+
   release:
     name: Build AAB and upload to Play
+    # A failed lint/typecheck/test run skips the build and the Play upload.
+    needs: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

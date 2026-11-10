@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # Pushes to main are verified inside android-release.yml (verify job) so the
+  # Play upload is gated on lint/typecheck/tests and the two pipelines never race.
   push:
-    branches: [develop, main]
+    branches: [develop]
   pull_request:
     branches: [develop, main]
 
