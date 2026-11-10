@@ -32,14 +32,15 @@ environment configuration; `backend-api.json` records the API contract.
 
 GitHub Actions provides continuous integration and Android release delivery:
 
-- **CI** runs on pull requests and pushes to `develop` or `main`. It installs
-  dependencies with `npm ci`, then runs ESLint, Jest tests, and the TypeScript
-  check (`npx tsc --noEmit`).
-- **Android release** runs on pushes to `main` or by manual dispatch. It builds
-  a signed Android App Bundle (AAB), retains it as a workflow artifact for 14
-  days, and uploads it to a configurable Google Play track. Release signing,
-  Play publishing, and Firebase configuration are provided through GitHub
-  Actions secrets; the default Play upload is an internal-track draft.
+- **CI** runs on pull requests to `develop`/`main` and pushes to `develop`. It
+  installs dependencies with `npm ci`, then runs ESLint, Jest tests, and the
+  TypeScript check (`npx tsc --noEmit`).
+- **Android release** runs on pushes to `main` or by manual dispatch. It first
+  runs the same lint/typecheck/test gate and only then builds a signed Android
+  App Bundle (AAB), retains it as a workflow artifact for 14 days, and uploads
+  it to a configurable Google Play track. Release signing, Play publishing, and
+  Firebase configuration are provided through GitHub Actions secrets; the
+  default Play upload is an internal-track draft.
 - **iOS:** the repository includes an iOS native project and configuration;
   automated iOS release publishing is not configured in the current workflows.
 
@@ -110,8 +111,13 @@ Two workflows live in `.github/workflows`:
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| `ci.yml` | PRs, pushes to `develop`/`main` | `npm ci`, lint, tests, and `npx tsc --noEmit`. |
-| `android-release.yml` | push to `main`, or manual dispatch | builds a signed `.aab` and uploads it to Google Play |
+| `ci.yml` | PRs to `develop`/`main`, pushes to `develop` | `npm ci`, lint, tests, and `npx tsc --noEmit`. |
+| `android-release.yml` | push to `main`, or manual dispatch | runs the same lint/typecheck/tests gate (`verify` job), then builds a signed `.aab` and uploads it to Google Play |
+
+The release pipeline is sequential: `release` declares `needs: verify`, so a
+failing lint, typecheck or test run skips the build and the Play upload. Pushes
+to `main` therefore only run `android-release.yml` — `ci.yml` stays off `main`
+so the checks and the deployment never run concurrently or duplicate work.
 
 ### One-time setup
 
