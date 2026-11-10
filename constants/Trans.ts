@@ -61,6 +61,8 @@ const translations: Translations = {
 				'setupAuthenticator.verifyFailed': '2FA verification failed',
 				// Generic/fallback app messages
 				loginFailed: 'Login failed',
+				// Shown while the backend throttles repeated login/2FA attempts.
+				loginCooldown: 'Too many attempts. Try again in',
 				sessionRefreshFailed:
 					'Session refresh failed. Tap Retry to attempt refresh or log in again.',
 				retryFailedPleaseLogin: 'Retry failed — please log in again',

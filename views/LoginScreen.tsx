@@ -11,6 +11,7 @@ import { fontSize, fontWeight } from '@/constants/Font';
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
 import { formatPhoneNumber } from '@/helpers';
+import { formatCountdown } from '@/helpers/rateLimit';
 import { signalAppReady } from '@/helpers/appReady';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import useTrackHistory from '@/hooks/useTrackHistory';
@@ -62,7 +63,7 @@ export default function LoginScreen() {
 	const authButtonText = useThemeColor({}, 'authButtonText');
 	const scrollRef = useRef<any>(null);
 	const passwordInputRef = useRef<TextInput>(null);
-	const { handleAuthentication, language } = useGeneral(); // Get authenticate function from context
+	const { handleAuthentication, language, loginRetryAt } = useGeneral(); // Get authenticate function from context
 	const [phoneNumber, setPhoneNumber] = useState('');
 	const [password, setPassword] = useState('');
 	const [loading, setLoading] = useState(false);
@@ -72,6 +73,21 @@ export default function LoginScreen() {
 		password: false,
 		login: false,
 	});
+
+	// Live countdown for the backend login lockout. `now` only ticks while a
+	// lockout is active so the rest of the screen never re-renders needlessly.
+	const [now, setNow] = useState<number>(() => Date.now());
+	useEffect(() => {
+		if (!loginRetryAt) return;
+		const id = setInterval(() => {
+			setNow(Date.now());
+			if (loginRetryAt - Date.now() <= 0) clearInterval(id);
+		}, 1000);
+		return () => clearInterval(id);
+	}, [loginRetryAt]);
+	const cooldownSeconds = loginRetryAt
+		? Math.max(0, Math.ceil((loginRetryAt - now) / 1000))
+		: 0;
 
 	// Autofill credentials for local development manual testing.
 	// Guarded by __DEV__ so this never runs in production builds.
@@ -322,11 +338,24 @@ export default function LoginScreen() {
 									onFocus={() => setFocusedInput('password')}
 									onBlur={() => setFocusedInput(null)}
 								/>
+								{cooldownSeconds > 0 && (
+									<ThemedText
+										style={{
+											color: errorColor,
+											textAlign: 'center',
+										}}
+										lightColor={errorColor}
+										darkColor={errorColor}
+									>
+										{`${translations[language].categories.auth['loginCooldown']} ${formatCountdown(cooldownSeconds)}`}
+									</ThemedText>
+								)}
 								<ThemedButton
 									title={translations[language].categories.buttons[
 										'signIn'
 									]?.toUpperCase()}
 									onPress={handleOnLogin}
+									disabled={cooldownSeconds > 0}
 									style={{
 										borderRadius: 8,
 									}}

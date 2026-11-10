@@ -2,7 +2,7 @@ import Toast from '@/components/Toast';
 // apiBaseUrl removed — use service layer for endpoints
 import translations from '@/constants/Trans';
 import { delay, normalizePhoneForApi, ShowAlert } from '@/helpers';
-import { parseApiError, registerAuthCallbacks } from '@/helpers/api';
+import { parseApiError, parseApiErrorDetails, registerAuthCallbacks } from '@/helpers/api';
 import { getApiData } from '@/helpers/apiResponse';
 import * as AuthService from '@/services/AuthService';
 import { fetchDashboard, fetchUser } from '@/services/UserService';
@@ -166,6 +166,8 @@ export interface GeneralContextType {
 	dashboardLoading: boolean;
 	lastDashboardUpdated?: number | null;
 	verifyingAuth?: boolean;
+	// Epoch ms until which login/2FA attempts are throttled by the backend.
+	loginRetryAt?: number | null;
 }
 
 const GeneralContext = createContext<GeneralContextType | undefined>(undefined);
@@ -279,6 +281,8 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 	const [mounted, setMounted] = useState<boolean>(false);
 	// Keep loader visible until we've checked SecureStore for an existing token
 	const [verifyingAuth, setVerifyingAuth] = useState<boolean>(true);
+	// Epoch ms until which the backend throttles further login/2FA attempts.
+	const [loginRetryAt, setLoginRetryAt] = useState<number | null>(null);
 	// Timestamp (ms since epoch) when the dashboard was last updated from server
 	const [lastDashboardUpdated, setLastDashboardUpdated] = useState<
 		number | null
@@ -1075,6 +1079,19 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 		}, 0);
 	}, [router, navigateToPath]);
 
+	// Record the server's auth cooldown so the login and 2FA screens can show a
+	// live countdown and disable their submit buttons. The API reports the wait
+	// as `Retry-After` / `data.retry_after` / `data.retry_at` (parseApiErrorDetails
+	// also falls back to the message for older deployments); a 429 without a
+	// usable wait locks the UI briefly so repeated taps do not extend the lockout.
+	const applyAuthCooldown = (status: number, retryAfterSeconds: number) => {
+		if (retryAfterSeconds > 0) {
+			setLoginRetryAt(Date.now() + retryAfterSeconds * 1000);
+		} else if (status === 429) {
+			setLoginRetryAt(Date.now() + 60_000);
+		}
+	};
+
 	const handleAuthentication = async ({
 		number,
 		password,
@@ -1087,7 +1104,9 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 			const normalizedNumber = normalizePhoneForApi(number);
 			const res = await AuthService.login(normalizedNumber, password ?? '');
 			if (!res.ok) {
-				const text = await parseApiError(res);
+				const { message: text, retryAfterSeconds } =
+					await parseApiErrorDetails(res);
+				applyAuthCooldown(res.status, retryAfterSeconds);
 				setAppMessage({
 					type: 'error',
 					message:
@@ -1326,7 +1345,9 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 		try {
 			const res = await AuthService.verifyOtp(payload);
 			if (!res.ok) {
-				const text = await parseApiError(res);
+				const { message: text, retryAfterSeconds } =
+					await parseApiErrorDetails(res);
+				applyAuthCooldown(res.status, retryAfterSeconds);
 				setAppMessage({
 					type: 'error',
 					message:
@@ -1356,6 +1377,7 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 			}
 			console.log("[GeneralContext] VerfiyOTP response", { resJson });
 			// Success - clear pending state and navigate to home
+			setLoginRetryAt(null);
 			setPendingRegistration?.(null);
 			setPendingPhone?.(null);
 			setPending2FAMethod?.(null);
@@ -1398,7 +1420,9 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 				String(otp).trim()
 			);
 			if (!res.ok) {
-				const text = await parseApiError(res);
+				const { message: text, retryAfterSeconds } =
+					await parseApiErrorDetails(res);
+				applyAuthCooldown(res.status, retryAfterSeconds);
 				setAppMessage({
 					type: 'error',
 					message:
@@ -1413,43 +1437,63 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 			// API 2.0 wraps the session payload in `data`.
 			const resJson: AuthSession | null = getApiData<AuthSession>(verifyBody);
 			console.info('[GeneralContext] 2FA verification response ', { resJson });
-			// If server returned token/user/dashboard, persist and merge into app state
-			try {
-				if (resJson && resJson.token) {
-					await SecureStore.setItemAsync(
-						'auth_token',
-						resJson.token
-					);
-					setAuthToken(resJson.token);
-				}
-				if (resJson && resJson.user) {
-					const u = resJson.user;
-					if (u.id !== undefined) {
-						await AsyncStorage.setItem('user_id', String(u.id));
-					}
-					if (u.email)
-						await AsyncStorage.setItem('user_email', u.email);
-					if (u.phone)
-						await AsyncStorage.setItem('user_phone', u.phone);
-					if (u.totp_secret) {
-						await SecureStore.setItemAsync(
-							'totp_secret',
-							u.totp_secret
-						);
-					}
-					setUser(prev => ({ ...prev ?? {}, ...u, platform: resJson.platform, account: resJson.active_account }));
-				}
-				// Show success toast if backend provided a message
-				try {
-					const successMessage =
-						verifyBody?.message ||
-						tr.categories.auth['setupAuthenticator.loginSuccess'] ||
-						'Login successful';
-					setAppMessage?.({ type: 'message', message: successMessage });
-				} catch { }
-			} catch (e) {
-				console.error('handleVerify2FA: error persisting auth state', e);
+			// A tokenless response means the session could not be established;
+			// do not navigate into the authenticated area (its guard would bounce
+			// straight back to login).
+			if (!resJson || !resJson.token) {
+				setAppMessage({
+					type: 'error',
+					message:
+						tr.categories.auth['setupAuthenticator.verifyFailed'] ||
+						'2FA verification failed',
+				});
+				return false;
 			}
+			// Establish the in-memory session first — navigation depends on it.
+			setLoginRetryAt(null);
+			setAuthToken(resJson.token);
+			if (resJson.user) {
+				const u = resJson.user;
+				setUser((prev) => ({
+					...prev ?? {},
+					...u,
+					platform: resJson.platform,
+					account: resJson.active_account,
+				}));
+			}
+			// Persist to storage best-effort; a storage failure must not bounce
+			// the user back to login after a successful verification.
+			const userSnapshot = resJson.user;
+			void (async () => {
+				try {
+					await SecureStore.setItemAsync('auth_token', resJson.token);
+					if (userSnapshot) {
+						if (userSnapshot.id !== undefined) {
+							await AsyncStorage.setItem('user_id', String(userSnapshot.id));
+						}
+						if (userSnapshot.email)
+							await AsyncStorage.setItem('user_email', userSnapshot.email);
+						if (userSnapshot.phone)
+							await AsyncStorage.setItem('user_phone', userSnapshot.phone);
+						if (userSnapshot.totp_secret) {
+							await SecureStore.setItemAsync(
+								'totp_secret',
+								userSnapshot.totp_secret
+							);
+						}
+					}
+				} catch (e) {
+					console.error('handleVerify2FA: error persisting auth state', e);
+				}
+			})();
+			// Show success toast if backend provided a message
+			try {
+				const successMessage =
+					verifyBody?.message ||
+					tr.categories.auth['setupAuthenticator.loginSuccess'] ||
+					'Login successful';
+				setAppMessage?.({ type: 'message', message: successMessage });
+			} catch { }
 			// success — clear pending setup and navigate to home
 			setPending2FASetup?.(null);
 			setPending2FAMethod?.(null);
@@ -1510,7 +1554,9 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 				otp: String(otp).trim(),
 			});
 			if (!res.ok) {
-				const text = await parseApiError(res);
+				const { message: text, retryAfterSeconds } =
+					await parseApiErrorDetails(res);
+				applyAuthCooldown(res.status, retryAfterSeconds);
 				setAppMessage?.({
 					type: 'error',
 					message:
@@ -1525,51 +1571,71 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 			// API 2.0 wraps the session payload in `data`.
 			const json: AuthSession | null = getApiData<AuthSession>(setupBody);
 
-			try {
-				// Persist token and selected user fields to AsyncStorage if present
-				if (json && json.token) {
-					// Store token securely
-					await SecureStore.setItemAsync('auth_token', json.token);
-					setAuthToken(json.token);
-				}
-				if (json && json.user) {
-					const user = json.user;
-					if (user.id !== undefined) {
-						await AsyncStorage.setItem('user_id', String(user.id));
-					}
-					if (user.email) {
-						await AsyncStorage.setItem('user_email', user.email);
-					}
-					if (user.phone) {
-						await AsyncStorage.setItem('user_phone', user.phone);
-					}
-					if (user.totp_secret) {
-						// Store TOTP secret securely
-						await SecureStore.setItemAsync(
-							'totp_secret',
-							user.totp_secret
-						);
-					}
-					setUser(prev => ({ ...prev ?? {}, ...user, account: json.active_account, platform: json.platform }));
-				}
-				// Show success toast if backend provided a message, then navigate
-				try {
-					const successMessage =
-						setupBody?.message ||
-						tr.categories.auth['setupAuthenticator.setupSuccess'] ||
-						'Two-factor authentication enabled.';
-					setAppMessage?.({ type: 'message', message: String(successMessage) });
-				} catch {
-					// ignore
-				}
-
-				// Clear pending setup and navigate into authenticated area
-				setPending2FASetup?.(null);
-				setPending2FAMethod?.(null);
-				router.replace('/(authenticated)/home');
-			} catch (e) {
-				console.error('[GeneralContext] handleSetupTotp: error persisting auth state', e);
+			// A tokenless response means the session could not be established;
+			// do not navigate into the authenticated area.
+			if (!json || !json.token) {
+				setAppMessage?.({
+					type: 'error',
+					message:
+						tr.categories.auth['setupAuthenticator.setupFailed'] ||
+						'TOTP setup failed',
+				});
+				return null;
 			}
+			// Establish the in-memory session first — navigation depends on it.
+			setLoginRetryAt(null);
+			setAuthToken(json.token);
+			if (json.user) {
+				const user = json.user;
+				setUser((prev) => ({
+					...prev ?? {},
+					...user,
+					account: json.active_account,
+					platform: json.platform,
+				}));
+			}
+			// Persist best-effort; a storage failure must not bounce the user
+			// back to login after TOTP setup succeeded.
+			const userSnapshot = json.user;
+			void (async () => {
+				try {
+					await SecureStore.setItemAsync('auth_token', json.token);
+					if (userSnapshot) {
+						if (userSnapshot.id !== undefined) {
+							await AsyncStorage.setItem('user_id', String(userSnapshot.id));
+						}
+						if (userSnapshot.email) {
+							await AsyncStorage.setItem('user_email', userSnapshot.email);
+						}
+						if (userSnapshot.phone) {
+							await AsyncStorage.setItem('user_phone', userSnapshot.phone);
+						}
+						if (userSnapshot.totp_secret) {
+							await SecureStore.setItemAsync(
+								'totp_secret',
+								userSnapshot.totp_secret
+							);
+						}
+					}
+				} catch (e) {
+					console.error('[GeneralContext] handleSetupTotp: error persisting auth state', e);
+				}
+			})();
+			// Show success toast if backend provided a message, then navigate
+			try {
+				const successMessage =
+					setupBody?.message ||
+					tr.categories.auth['setupAuthenticator.setupSuccess'] ||
+					'Two-factor authentication enabled.';
+				setAppMessage?.({ type: 'message', message: String(successMessage) });
+			} catch {
+				// ignore
+			}
+
+			// Clear pending setup and navigate into authenticated area
+			setPending2FASetup?.(null);
+			setPending2FAMethod?.(null);
+			router.replace('/(authenticated)/home');
 		} catch (err: any) {
 			setAppMessage?.({
 				type: 'error',
@@ -1635,6 +1701,7 @@ export const GeneralProvider: React.FC<{ children: React.ReactNode }> = ({
 				verifyingAuth,
 				dashboardLoading,
 				lastDashboardUpdated,
+				loginRetryAt,
 			}}
 		>
 			{children}

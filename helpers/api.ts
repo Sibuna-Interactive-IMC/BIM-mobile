@@ -5,6 +5,11 @@ import {
 	getApiMessage,
 	getOperationState,
 } from '@/helpers/apiResponse';
+import {
+	getBodyRetryAfterSeconds,
+	getHeaderRetryAfterSeconds,
+	parseRetryAfterSeconds,
+} from '@/helpers/rateLimit';
 
 /**
  * Lightweight fetch wrapper that injects the X-Client-Type header for backend API calls.
@@ -240,60 +245,100 @@ async function handle401(
 export default apiFetch;
 
 /**
+ * Read a failed response once and return both the human-readable message and
+ * the server's cooldown (from `Retry-After` / `data.retry_after` /
+ * `data.retry_at`, falling back to parsing the message).
+ */
+export interface ApiErrorDetails {
+	message: string;
+	/** Seconds the server asked us to wait before retrying; 0 when unspecified. */
+	retryAfterSeconds: number;
+}
+
+/** Human-readable message from a parsed JSON error body. */
+function formatErrorBody(body: unknown): string | null {
+	if (!body || typeof body !== 'object') return null;
+	const record = body as Record<string, any>;
+
+	// If API uses { errors: { field: [..] } }
+	if (record.errors && typeof record.errors === 'object') {
+		const parts: string[] = [];
+		for (const key of Object.keys(record.errors)) {
+			const val = record.errors[key];
+			if (Array.isArray(val)) {
+				// join array messages for the field
+				parts.push(`${key}: ${val.join('; ')}`);
+			} else if (typeof val === 'string') {
+				parts.push(`${key}: ${val}`);
+			} else if (val && typeof val === 'object') {
+				try {
+					parts.push(`${key}: ${Object.values(val).flat().join('; ')}`);
+				} catch {
+					parts.push(`${key}: ${JSON.stringify(val)}`);
+				}
+			}
+		}
+		if (parts.length) return parts.join(' \n');
+	}
+
+	// Fallbacks: common message keys
+	if (typeof record.message === 'string') return record.message;
+	if (typeof record.error === 'string') return record.error;
+
+	// If body is simple object, stringify a concise form
+	try {
+		return JSON.stringify(body);
+	} catch {
+		return null;
+	}
+}
+
+export async function parseApiErrorDetails(
+	res: Response
+): Promise<ApiErrorDetails> {
+	// The header survives body consumption, so read it first.
+	const headerSeconds = getHeaderRetryAfterSeconds(res);
+
+	try {
+		const ct = res.headers.get('content-type') || '';
+		if (ct.includes('application/json')) {
+			const body = await res.json();
+			const message = formatErrorBody(body);
+			return {
+				message: message ?? `HTTP error ${res.status}`,
+				retryAfterSeconds:
+					headerSeconds ||
+					getBodyRetryAfterSeconds(body) ||
+					parseRetryAfterSeconds(message),
+			};
+		}
+
+		// Non-json: return text
+		try {
+			const text = await res.text();
+			if (text) {
+				return {
+					message: text,
+					retryAfterSeconds: headerSeconds || parseRetryAfterSeconds(text),
+				};
+			}
+		} catch { }
+	} catch {
+		// ignore and continue to generic fallback
+	}
+	return {
+		message: `HTTP error ${res.status}`,
+		retryAfterSeconds: headerSeconds,
+	};
+}
+
+/**
  * Parse a non-OK Response into a human readable error string.
  * Handles flattened JSON from our API like:
  * { errors: { name: ["..."], password: ["..."] } }
  */
 export async function parseApiError(res: Response): Promise<string> {
-	try {
-		const ct = res.headers.get('content-type') || '';
-		if (ct.includes('application/json')) {
-			const body = await res.json();
-			// If API uses { errors: { field: [..] } }
-			if (body && typeof body === 'object') {
-				if (body.errors && typeof body.errors === 'object') {
-					const parts: string[] = [];
-					for (const key of Object.keys(body.errors)) {
-						const val = body.errors[key];
-						if (Array.isArray(val)) {
-							// join array messages for the field
-							parts.push(`${key}: ${val.join('; ')}`);
-						} else if (typeof val === 'string') {
-							parts.push(`${key}: ${val}`);
-						} else if (val && typeof val === 'object') {
-							try {
-								parts.push(`${key}: ${Object.values(val).flat().join('; ')}`);
-							} catch {
-								parts.push(`${key}: ${JSON.stringify(val)}`);
-							}
-						}
-					}
-					if (parts.length) return parts.join(' \n');
-				}
-
-				// Fallbacks: common message keys
-				if (body.message && typeof body.message === 'string')
-					return body.message;
-				if (body.error && typeof body.error === 'string') return body.error;
-
-				// If body is simple object, stringify a concise form
-				try {
-					return JSON.stringify(body);
-				} catch {
-					// pass through
-				}
-			}
-		} else {
-			// Non-json: return text
-			try {
-				const text = await res.text();
-				if (text) return text;
-			} catch { }
-		}
-	} catch {
-		// ignore and continue to generic fallback
-	}
-	return `HTTP error ${res.status}`;
+	return (await parseApiErrorDetails(res)).message;
 }
 
 /**
