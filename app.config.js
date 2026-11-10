@@ -86,6 +86,10 @@ export default ({ config }) => {
                         compileSdkVersion: 36,
                         targetSdkVersion: 36,
                         buildToolsVersion: '36.0.0',
+                        // Google Play's DEX code optimisation metric requires
+                        // obfuscation; R8 is off by default in Expo release
+                        // builds. Mirrored in android/gradle.properties.
+                        enableProguardInReleaseBuilds: true,
                     }
                 },
             ],

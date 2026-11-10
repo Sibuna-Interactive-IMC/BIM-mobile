@@ -26,6 +26,7 @@ const ADMIN_DRAWER_ROUTES = new Set([
 	'broadcasts',
 	'router-tools',
 	'document-verification',
+	'data-deletion-requests',
 ]);
 
 function CustomDrawerContent(props: any) {
@@ -53,7 +54,12 @@ function CustomDrawerContent(props: any) {
 				'accounts',
 				'access',
 				...(isAdmin
-					? ['broadcasts', 'router-tools', 'document-verification']
+					? [
+							'broadcasts',
+							'router-tools',
+							'document-verification',
+							'data-deletion-requests',
+						]
 					: []),
 				'connector',
 				'documents',
@@ -130,6 +136,9 @@ function CustomDrawerContent(props: any) {
 				icon = (
 					<IconSymbol size={24} name='document-verified' color={iconColor} />
 				);
+				break;
+			case 'data-deletion-requests':
+				icon = <IconSymbol size={24} name='delete.outline' color={iconColor} />;
 				break;
 			case 'documents':
 				icon = <IconSymbol size={24} name='documents' color={iconColor} />;
@@ -360,6 +369,7 @@ export default function DrawerLayout() {
 				<Drawer.Screen name='broadcasts' />
 				<Drawer.Screen name='router-tools' />
 				<Drawer.Screen name='document-verification' />
+				<Drawer.Screen name='data-deletion-requests' />
 				<Drawer.Screen name='banks' />
 				<Drawer.Screen name='connector' />
 				<Drawer.Screen name='documents' />
