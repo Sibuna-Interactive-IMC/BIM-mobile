@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/ThemedView';
 
 import translations from '@/constants/Trans';
 import { useGeneral } from '@/context/GeneralContext';
+import { formatCountdown } from '@/helpers/rateLimit';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -32,6 +33,7 @@ export default function Setup2FAScreen() {
 		language,
 		//handleVerify2FA,
 		handleSetupTotp,
+		loginRetryAt,
 	} = useGeneral();
 	//const router = useRouter();
 	const scrollRef = useRef<any>(null);
@@ -41,8 +43,23 @@ export default function Setup2FAScreen() {
 	const authButtonText = useThemeColor({}, 'authButtonText');
 	const inputBackground = useThemeColor({}, 'inputBackground');
 	const bim = useThemeColor({}, 'bim');
+	const errorColor = useThemeColor({}, 'error');
 	const [code, setCode] = useState('');
 	const [loading, setLoading] = useState(false);
+
+	// Live countdown for a backend TOTP lockout; `now` ticks only while one is active.
+	const [now, setNow] = useState<number>(() => Date.now());
+	useEffect(() => {
+		if (!loginRetryAt) return;
+		const id = setInterval(() => {
+			setNow(Date.now());
+			if (loginRetryAt - Date.now() <= 0) clearInterval(id);
+		}, 1000);
+		return () => clearInterval(id);
+	}, [loginRetryAt]);
+	const cooldownSeconds = loginRetryAt
+		? Math.max(0, Math.ceil((loginRetryAt - now) / 1000))
+		: 0;
 
 	const qrUri = useMemo(() => {
 		if (!pending2FASetup) return null;
@@ -191,7 +208,8 @@ export default function Setup2FAScreen() {
 	const canCompleteTotp =
 		!loading &&
 		!!pending2FASetup?.setup_token &&
-		code.trim().length > 0;
+		code.trim().length > 0 &&
+		cooldownSeconds === 0;
 
 	useEffect(() => {
 		if (!focusedInput || !scrollRef.current) return;
@@ -318,6 +336,18 @@ export default function Setup2FAScreen() {
 					/>
 
 					<ThemedView style={{ gap: 12, width: '100%', marginTop: 20 }}>
+						{cooldownSeconds > 0 && (
+							<ThemedText
+								style={{
+									color: errorColor,
+									textAlign: 'center',
+								}}
+								lightColor={errorColor}
+								darkColor={errorColor}
+							>
+								{`${translations[language].categories.auth['loginCooldown']} ${formatCountdown(cooldownSeconds)}`}
+							</ThemedText>
+						)}
 						<ThemedButton
 							title={
 								translations[language].categories.auth[

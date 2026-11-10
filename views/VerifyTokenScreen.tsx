@@ -14,6 +14,7 @@ import useTrackHistory from '@/hooks/useTrackHistory';
 // no direct router usage here; GeneralContext performs navigation after successful verify
 import { signalAppReady } from '@/helpers/appReady';
 import { env } from '@/helpers/env';
+import { formatCountdown } from '@/helpers/rateLimit';
 import { useEffect, useRef, useState } from 'react';
 import {
 	Animated,
@@ -54,7 +55,7 @@ export default function VerifyTokenScreen() {
 	// timeout ref
 	const otpTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const loaderFadeAnim = useAnimatedValue(0);
-	const { language, handleVerify, handleVerify2FA, pending2FAMethod } =
+	const { language, handleVerify, handleVerify2FA, pending2FAMethod, loginRetryAt } =
 		useGeneral(); // Get language and verify handlers + 2FA method from context
 	const [code, setCode] = useState('');
 	const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -64,6 +65,21 @@ export default function VerifyTokenScreen() {
 		code: false,
 		login: false,
 	});
+
+	// Live countdown for the backend 2FA lockout. `now` only ticks while a
+	// lockout is active.
+	const [now, setNow] = useState<number>(() => Date.now());
+	useEffect(() => {
+		if (!loginRetryAt) return;
+		const id = setInterval(() => {
+			setNow(Date.now());
+			if (loginRetryAt - Date.now() <= 0) clearInterval(id);
+		}, 1000);
+		return () => clearInterval(id);
+	}, [loginRetryAt]);
+	const cooldownSeconds = loginRetryAt
+		? Math.max(0, Math.ceil((loginRetryAt - now) / 1000))
+		: 0;
 
 	// Prefill OTP in development when DEV_OTP is provided in local .env
 	useEffect(() => {
@@ -260,11 +276,24 @@ export default function VerifyTokenScreen() {
 									onBlur={() => setFocusedInput(null)}
 								/>
 
+								{cooldownSeconds > 0 && (
+									<ThemedText
+										style={{
+											color: errorColor,
+											textAlign: 'center',
+										}}
+										lightColor={errorColor}
+										darkColor={errorColor}
+									>
+										{`${translations[language].categories.auth['loginCooldown']} ${formatCountdown(cooldownSeconds)}`}
+									</ThemedText>
+								)}
 								<ThemedButton
 									title={translations[language].categories.buttons[
 										'verifyOTP'
 									]?.toUpperCase()}
 									onPress={handleOnVerifyCode}
+									disabled={cooldownSeconds > 0}
 									style={{ borderRadius: 8 }}
 									darkColor={errors['login'] ? buttonError : bim}
 									lightColor={errors['login'] ? buttonError : bim}
