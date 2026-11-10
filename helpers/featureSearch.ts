@@ -208,6 +208,13 @@ export const appFeatures: AppFeature[] = [
 		audience: 'admin',
 		keywords: ['kyc', 'verify', 'documents', 'approval'],
 	},
+	{
+		id: 'data-deletion-requests',
+		path: '/(authenticated)/data-deletion-requests',
+		icon: 'delete.outline',
+		audience: 'admin',
+		keywords: ['privacy', 'delete', 'erasure', 'data removal', 'requests'],
+	},
 ];
 
 const normalize = (value: string) =>

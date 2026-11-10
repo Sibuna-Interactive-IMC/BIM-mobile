@@ -1650,6 +1650,91 @@ export type SetDocumentsVerifiedResponse = ApiEnvelope<{
 	user?: DocumentOwner;
 }>;
 
+/** Status of a public data deletion request. */
+export type DataDeletionStatus =
+	| 'pending'
+	| 'in_review'
+	| 'awaiting_user'
+	| 'completed'
+	| 'rejected';
+
+export type DataDeletionRequestType = 'account' | 'hotspot' | 'other';
+
+/** One deletion request returned to platform admins. */
+export interface AdminDataDeletionRequest {
+	id: number;
+	name?: string | null;
+	email?: string | null;
+	phone?: string | null;
+	request_type: DataDeletionRequestType;
+	request_type_label?: string | null;
+	account_reference?: string | null;
+	details?: string | null;
+	status: DataDeletionStatus;
+	status_label?: string | null;
+	created_at?: string | null;
+	updated_at?: string | null;
+	reply_message?: string | null;
+	replied_at?: string | null;
+	admin_notes?: string | null;
+	handled_by?: number | null;
+	handled_by_name?: string | null;
+	handled_at?: string | null;
+	matched_user_id?: number | null;
+	matched_user_email?: string | null;
+	ip_address?: string | null;
+	user_agent?: string | null;
+}
+
+/** A login matched to a request's email or phone; only these may be deleted by admins. */
+export interface DataDeletionMatchingUser {
+	id: number;
+	name?: string | null;
+	email?: string | null;
+	phone?: string | null;
+	accounts_count?: number;
+	created_at?: string | null;
+}
+
+export interface AdminDataDeletionRequestsData {
+	deletion_requests?: AdminDataDeletionRequest[];
+	status_counts?: Partial<Record<DataDeletionStatus, number>>;
+	total?: number;
+}
+
+export interface GetAdminDataDeletionRequestsResponse
+	extends ApiEnvelope<AdminDataDeletionRequestsData> {
+	deletion_requests?: AdminDataDeletionRequest[];
+	status_counts?: Partial<Record<DataDeletionStatus, number>>;
+	total?: number;
+	deletion_requests_metadata?: PaginationMeta;
+}
+
+export interface AdminDataDeletionRequestDetailData {
+	deletion_request?: AdminDataDeletionRequest;
+	matching_users?: DataDeletionMatchingUser[];
+}
+
+export type GetAdminDataDeletionRequestResponse =
+	ApiEnvelope<AdminDataDeletionRequestDetailData>;
+
+export interface DataDeletionReplyPayload {
+	message: string;
+	status: 'pending' | 'in_review' | 'awaiting_user';
+}
+
+export interface DataDeletionCompletePayload {
+	confirmation: 'DELETE';
+	user_id?: number;
+	notes?: string;
+	send_email: boolean;
+}
+
+export interface DataDeletionRejectPayload {
+	reason: string;
+	send_email: boolean;
+}
+
 /** One preset avatar from `GET /profile/avatars`. */
 export interface AvatarPreset {
 	id: string;
